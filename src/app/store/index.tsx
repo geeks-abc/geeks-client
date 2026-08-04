@@ -1,5 +1,5 @@
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -11,34 +11,22 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { HomeHeader } from '@/components/header';
+import { ListRowSkeleton } from '@/components/skeleton';
 import { api, Listing, ListingStatus } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fmtTime, isToday, remainingLabel, usePolling } from '@/lib/hooks';
-import { ListRowSkeleton } from '@/components/skeleton';
-
-const P = {
-  outer: '#E7E7E3',
-  surface: '#F9F9F5',
-  white: '#FFFFFF',
-  yellow: '#FFCF14',
-  paleYellow: '#FFECA5',
-  navy: '#051224',
-  sub: '#6B7078',
-  line: '#E0E3E0',
-  orange: '#FF9740',
-  green: '#E86618',
-  greenSoft: '#FFEFE2',
-  blue: '#2E77D0',
-};
+import { C, R } from '@/lib/theme';
 
 const STATUS: Record<ListingStatus, { label: string; fg: string; bg: string }> = {
-  OPEN: { label: '모집 중', fg: P.green, bg: P.greenSoft },
-  MATCHED: { label: '픽업 예정', fg: P.navy, bg: P.paleYellow },
-  COMPLETED: { label: '전달 완료', fg: P.white, bg: P.navy },
-  EXPIRED: { label: '마감', fg: P.sub, bg: '#EEF0EE' },
-  CANCELLED: { label: '취소', fg: P.sub, bg: '#EEF0EE' },
+  OPEN: { label: '모집 중', fg: C.brandDeep, bg: C.brandSoft },
+  MATCHED: { label: '픽업 예정', fg: C.blue, bg: C.blueSoft },
+  COMPLETED: { label: '전달 완료', fg: '#FFFFFF', bg: C.navy },
+  EXPIRED: { label: '마감', fg: C.sub, bg: C.graySoft },
+  CANCELLED: { label: '취소', fg: C.sub, bg: C.graySoft },
 };
 
+// S-01 가게 홈 — 마이페이지 디자인 시스템 기준
 export default function StoreHome() {
   const { me } = useAuth();
   const router = useRouter();
@@ -59,106 +47,85 @@ export default function StoreHome() {
 
   const visibleListings = (listings ?? []).filter((item) => item.status !== 'CANCELLED');
   const today = visibleListings.filter((item) => isToday(item.createdAt));
-  const stats = {
-    open: today.filter((item) => item.status === 'OPEN').length,
-    matched: today.filter((item) => item.status === 'MATCHED').length,
-    completed: today.filter((item) => item.status === 'COMPLETED').length,
-  };
+  const stats = [
+    { label: '모집 중', value: today.filter((i) => i.status === 'OPEN').length },
+    { label: '픽업 예정', value: today.filter((i) => i.status === 'MATCHED').length },
+    { label: '전달 완료', value: today.filter((i) => i.status === 'COMPLETED').length },
+  ];
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top']}>
-      <View style={s.screen}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={P.navy} />
-          }
-          contentContainerStyle={s.scrollContent}
-        >
-          <View style={s.hero}>
-            <Text style={s.logo}>이음</Text>
-            <Text style={s.englishLabel}>STORE HOME</Text>
-            <Text style={s.storeName}>{me?.store?.name ?? '오늘의 빵집'}</Text>
-            <Text style={s.heroTitle}>오늘 남은 식품을{`\n`}필요한 곳에 이어보세요.</Text>
-          </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.text} />
+        }
+        contentContainerStyle={s.content}
+      >
+        <HomeHeader />
 
-          {visibleListings.length > 0 ? (
-            <View style={s.statsCard}>
-              <Stat label="모집 중" value={stats.open} />
-              <Stat label="픽업 예정" value={stats.matched} />
-              <Stat label="전달 완료" value={stats.completed} />
+        <View style={s.profileHead}>
+          <View style={s.avatar}>
+            <Ionicons name="storefront" size={24} color={C.brand} />
+          </View>
+          <View style={{ flex: 1, gap: 3 }}>
+            <Text style={s.name}>{me?.store?.name ?? '이음 가게'}</Text>
+            <View style={s.roleChip}>
+              <Text style={s.roleChipText}>음식점</Text>
             </View>
-          ) : null}
-
-          <View style={s.body}>
-            {visibleListings.length > 0 ? (
-              <Pressable
-                onPress={() => router.push('/new-listing')}
-                style={({ pressed }) => [s.registerTopButton, pressed && s.pressed]}
-              >
-                <Text style={s.registerTopButtonText}>+ 기부 품목 등록</Text>
-              </Pressable>
-            ) : null}
-
-            <Text style={s.sectionTitle}>내 등록 품목</Text>
-
-            {listings === null ? (
-              <View style={{ gap: 10 }}>
-                <ListRowSkeleton />
-                <ListRowSkeleton />
-                <ListRowSkeleton />
-              </View>
-            ) : visibleListings.length === 0 ? (
-              <View style={s.emptyCard}>
-                <View style={s.emptyCircle}>
-                  <View style={s.emptyCircleInner} />
-                </View>
-                <Text style={s.emptyTitle}>아직 등록한 기부 식품이 없습니다.</Text>
-                <Text style={s.emptySub}>오늘 남은 식품을 등록해 보세요.</Text>
-                <Pressable
-                  onPress={() => router.push('/new-listing')}
-                  style={({ pressed }) => [s.emptyButton, pressed && s.pressed]}
-                >
-                  <Text style={s.emptyButtonText}>기부 품목 등록</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={s.listGap}>
-                {visibleListings.map((listing, index) => (
-                  <ListingCard
-                    key={listing.id}
-                    listing={listing}
-                    accent={index % 2 === 0 ? P.orange : '#E1B544'}
-                    onPress={() => router.push(`/listing/${listing.id}`)}
-                  />
-                ))}
-              </View>
-            )}
           </View>
-        </ScrollView>
-      </View>
+        </View>
+
+        <Text style={s.sectionTitle}>오늘 현황</Text>
+        <View style={s.statsCard}>
+          {stats.map((stat, index) => (
+            <View key={stat.label} style={[s.stat, index > 0 && s.statDivider]}>
+              <Text style={s.statValue}>{stat.value}</Text>
+              <Text style={s.statLabel}>{stat.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          onPress={() => router.push('/new-listing')}
+          style={({ pressed }) => [s.registerButton, pressed && s.pressed]}
+        >
+          <Text style={s.registerButtonText}>+ 기부 품목 등록</Text>
+        </Pressable>
+
+        <Text style={s.sectionTitle}>내 등록 품목</Text>
+
+        {listings === null ? (
+          <View style={{ gap: 10 }}>
+            <ListRowSkeleton />
+            <ListRowSkeleton />
+            <ListRowSkeleton />
+          </View>
+        ) : visibleListings.length === 0 ? (
+          <View style={s.emptyCard}>
+            <View style={s.emptyIcon}>
+              <Ionicons name="fast-food-outline" size={26} color={C.brand} />
+            </View>
+            <Text style={s.emptyTitle}>아직 등록한 기부 식품이 없어요</Text>
+            <Text style={s.emptySub}>오늘 남은 식품을 등록해 보세요.</Text>
+          </View>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {visibleListings.map((listing) => (
+              <ListingRow
+                key={listing.id}
+                listing={listing}
+                onPress={() => router.push(`/listing/${listing.id}`)}
+              />
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={s.stat}>
-      <Text style={s.statLabel}>{label}</Text>
-      <Text style={s.statValue}>{value}건</Text>
-    </View>
-  );
-}
-
-function ListingCard({
-  listing,
-  accent,
-  onPress,
-}: {
-  listing: Listing;
-  accent: string;
-  onPress: () => void;
-}) {
+function ListingRow({ listing, onPress }: { listing: Listing; onPress: () => void }) {
   const status = STATUS[listing.status];
   const timeText =
     listing.status === 'OPEN'
@@ -166,183 +133,127 @@ function ListingCard({
       : `${fmtTime(listing.pickupEnd)} 마감`;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [s.foodCard, pressed && s.pressed]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && s.pressed]}>
       {listing.photoUrl ? (
-        <Image transition={150} source={{ uri: listing.photoUrl }} style={s.foodImage} />
+        <Image transition={150} source={{ uri: listing.photoUrl }} style={s.thumb} />
       ) : (
-        <View style={[s.foodImage, { backgroundColor: accent }]}>
-          <View style={s.foodImageFooter}>
-            <Text style={s.foodImageLabel}>FOOD</Text>
-          </View>
+        <View style={[s.thumb, s.thumbFallback]}>
+          <Ionicons name="fast-food-outline" size={20} color={C.gray} />
         </View>
       )}
-      <View style={s.foodContent}>
-        <Text style={s.foodStore}>{listing.store?.name ?? '오늘의 빵집'}</Text>
-        <Text numberOfLines={1} style={s.foodTitle}>{listing.itemName}</Text>
-        <Text style={s.foodMeta}>{listing.quantity}개 · {timeText}</Text>
-        <View style={[s.statusPill, { backgroundColor: status.bg }]}>
-          <Text style={[s.statusText, { color: status.fg }]}>{status.label}</Text>
-        </View>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text numberOfLines={1} style={s.rowTitle}>{listing.itemName}</Text>
+        <Text style={s.rowMeta}>
+          {listing.quantity}개 · {timeText}
+        </Text>
       </View>
-      <Ionicons name="arrow-forward" size={24} color={P.navy} />
+      <View style={[s.statusPill, { backgroundColor: status.bg }]}>
+        <Text style={[s.statusText, { color: status.fg }]}>{status.label}</Text>
+      </View>
     </Pressable>
   );
 }
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: P.outer },
-  screen: {
-    flex: 1,
-    marginHorizontal: 0,
-    backgroundColor: P.surface,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    overflow: 'hidden',
+  safeArea: { flex: 1, backgroundColor: C.bg },
+  content: {
+    padding: 20,
+    paddingBottom: 32,
+    gap: 12,
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
   },
-  scrollContent: { paddingBottom: 30 },
-  hero: {
-    minHeight: 250,
-    backgroundColor: P.yellow,
-    paddingHorizontal: 20,
-    paddingTop: 18,
+  pressed: { opacity: 0.7 },
+  profileHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 6,
+    marginBottom: 10,
   },
-  logo: {
-    color: P.navy,
-    fontSize: 23,
-    lineHeight: 32,
-    fontFamily: 'Pretendard-Black',
+  avatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: C.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  englishLabel: {
-    color: P.sub,
-    fontSize: 10,
-    lineHeight: 14,
+  name: { fontSize: 19, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  roleChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: C.brandSoft,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  roleChipText: { fontSize: 11.5, fontFamily: 'Pretendard-Bold', color: C.brandDeep },
+  sectionTitle: {
+    fontSize: 15,
     fontFamily: 'Pretendard-Bold',
-  },
-  storeName: {
-    color: P.navy,
-    fontSize: 12,
-    lineHeight: 17,
-    fontFamily: 'Pretendard-Bold',
-    marginTop: 27,
-  },
-  heroTitle: {
-    color: P.navy,
-    fontSize: 26,
-    lineHeight: 36,
-    fontFamily: 'Pretendard-Black',
-    letterSpacing: -0.8,
-    marginTop: 17,
+    color: C.text,
+    marginTop: 8,
   },
   statsCard: {
-    marginHorizontal: 20,
-    marginTop: -36,
-    minHeight: 108,
-    backgroundColor: P.white,
-    borderRadius: 24,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    alignItems: 'center',
+    backgroundColor: C.card,
+    borderRadius: R.card,
+    paddingVertical: 18,
   },
-  stat: { flex: 1, gap: 7 },
-  statLabel: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
-  statValue: { color: P.navy, fontSize: 23, fontFamily: 'Pretendard-Black' },
-  body: { paddingHorizontal: 20, paddingTop: 46 },
-  registerTopButton: {
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: P.yellow,
+  stat: { flex: 1, alignItems: 'center', gap: 2 },
+  statDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: C.line,
+  },
+  statValue: { fontSize: 21, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  statLabel: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.sub },
+  registerButton: {
+    backgroundColor: C.brand,
+    borderRadius: 14,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  registerButtonText: { fontSize: 15.5, fontFamily: 'Pretendard-Bold', color: '#FFFFFF' },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: C.card,
+    borderRadius: R.card,
+    padding: 14,
+  },
+  thumb: { width: 52, height: 52, borderRadius: 12 },
+  thumbFallback: {
+    backgroundColor: C.bg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 26,
   },
-  registerTopButtonText: { color: P.navy, fontSize: 15, fontFamily: 'Pretendard-Bold' },
-  sectionTitle: {
-    color: P.navy,
-    fontSize: 20,
-    lineHeight: 28,
-    fontFamily: 'Pretendard-Black',
-    marginBottom: 18,
+  rowTitle: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.text },
+  rowMeta: { fontSize: 12.5, fontFamily: 'Pretendard-Regular', color: C.sub },
+  statusPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  loadingCard: {
-    minHeight: 180,
-    borderRadius: 24,
-    backgroundColor: P.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  statusText: { fontSize: 11.5, fontFamily: 'Pretendard-ExtraBold' },
   emptyCard: {
-    minHeight: 300,
-    borderRadius: 24,
-    backgroundColor: P.white,
+    backgroundColor: C.card,
+    borderRadius: R.card,
+    padding: 30,
     alignItems: 'center',
-    paddingTop: 34,
-    paddingHorizontal: 20,
-    overflow: 'hidden',
+    gap: 6,
   },
-  emptyCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: P.paleYellow,
+  emptyIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: C.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
-  emptyCircleInner: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: P.navy,
-  },
-  emptyTitle: {
-    color: P.navy,
-    fontSize: 18,
-    lineHeight: 25,
-    fontFamily: 'Pretendard-Bold',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  emptySub: {
-    color: P.sub,
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: 'Pretendard-Regular',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  emptyButton: {
-    alignSelf: 'stretch',
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: P.yellow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-  },
-  emptyButtonText: { color: P.navy, fontSize: 15, fontFamily: 'Pretendard-Bold' },
-  listGap: { gap: 12 },
-  foodCard: {
-    minHeight: 122,
-    borderRadius: 22,
-    backgroundColor: P.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    gap: 16,
-  },
-  foodImage: {
-    width: 104,
-    height: 98,
-    borderRadius: 17,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  foodImageFooter: { height: 34, backgroundColor: P.navy, justifyContent: 'center', paddingLeft: 15 },
-  foodImageLabel: { color: P.white, fontSize: 11, fontFamily: 'Pretendard-Bold' },
-  foodContent: { flex: 1, alignSelf: 'stretch', paddingTop: 3 },
-  foodStore: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
-  foodTitle: { color: P.navy, fontSize: 17, fontFamily: 'Pretendard-Bold', marginTop: 8 },
-  foodMeta: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular', marginTop: 4 },
-  statusPill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, marginTop: 7 },
-  statusText: { fontSize: 10, fontFamily: 'Pretendard-Bold' },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.99 }] },
+  emptyTitle: { fontSize: 15, fontFamily: 'Pretendard-Bold', color: C.text },
+  emptySub: { fontSize: 12.5, fontFamily: 'Pretendard-Regular', color: C.sub },
 });
