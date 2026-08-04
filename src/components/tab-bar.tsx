@@ -2,7 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { C } from '@/lib/theme';
 
 // 역할별 탭 구성 — 단일 소스 (레이아웃에서 중복 정의 금지)
 const STORE_TABS: Record<string, TabMeta> = {
@@ -45,16 +47,12 @@ interface TabBarProps {
   tabs: Record<string, TabMeta>;
 }
 
-const NAVY = '#051224';
-const SUB = '#9AA0A6';
-const YELLOW = '#FFCF14';
-
-// 하단 내비게이션 — 활성 탭은 옐로 필 + 채워진 아이콘, 비활성은 아웃라인
+// 하단 내비게이션 — 활성 탭은 오렌지 소프트 필(아이콘+라벨)로 확장, 비활성은 아웃라인 아이콘만
 export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}>
+    <View style={[s.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       {state.routes.map((route, index) => {
         const meta = tabs[route.name];
         if (!meta) return null;
@@ -69,6 +67,7 @@ export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
           <Pressable
             key={route.key}
             accessibilityRole="button"
+            accessibilityLabel={meta.label}
             accessibilityState={active ? { selected: true } : {}}
             onPress={() => {
               const event = navigation.emit({
@@ -83,14 +82,21 @@ export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
             }}
             style={({ pressed }) => [s.tab, pressed && s.pressed]}
           >
-            <View style={[s.iconPill, active && s.iconPillActive]}>
+            <Animated.View
+              layout={LinearTransition.duration(220)}
+              style={[s.pill, active && s.pillActive]}
+            >
               {iconName ? (
-                <Ionicons name={iconName} size={21} color={active ? NAVY : SUB} />
+                <Ionicons name={iconName} size={21} color={active ? C.brand : C.gray} />
               ) : (
-                <View style={[s.fallbackDot, { backgroundColor: active ? NAVY : SUB }]} />
+                <View style={[s.fallbackDot, { backgroundColor: active ? C.brand : C.gray }]} />
               )}
-            </View>
-            <Text style={[s.label, active && s.labelActive]}>{meta.label}</Text>
+              {active ? (
+                <Animated.Text entering={FadeIn.duration(180)} style={s.pillLabel}>
+                  {meta.label}
+                </Animated.Text>
+              ) : null}
+            </Animated.View>
           </Pressable>
         );
       })}
@@ -101,43 +107,48 @@ export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
 const s = StyleSheet.create({
   bar: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    paddingTop: 10,
-    paddingHorizontal: 8,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     // 위쪽으로 은은한 그림자 (경계선 대체)
     shadowColor: '#0B1220',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -6 },
-    elevation: 14,
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 16,
     ...(Platform.OS === 'web'
-      ? { boxShadow: '0 -6px 16px rgba(11, 18, 32, 0.08)' }
+      ? { boxShadow: '0 -8px 20px rgba(11, 18, 32, 0.1)' }
       : null),
   },
   tab: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  pressed: { opacity: 0.6 },
-  iconPill: {
-    width: 58,
-    height: 32,
-    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pressed: { opacity: 0.6 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 40,
+    minWidth: 44,
+    paddingHorizontal: 12,
+    borderRadius: 20,
     backgroundColor: 'transparent',
   },
-  iconPillActive: { backgroundColor: YELLOW },
+  pillActive: {
+    backgroundColor: C.brandSoft,
+    paddingHorizontal: 16,
+  },
+  pillLabel: {
+    color: C.brandDeep,
+    fontSize: 13,
+    lineHeight: 16,
+    fontFamily: 'Pretendard-Bold',
+  },
   fallbackDot: { width: 6, height: 6, borderRadius: 3 },
-  label: {
-    color: SUB,
-    fontSize: 11,
-    lineHeight: 14,
-    fontFamily: 'Pretendard-SemiBold',
-  },
-  labelActive: {
-    color: NAVY,
-    fontFamily: 'Pretendard-ExtraBold',
-  },
 });
