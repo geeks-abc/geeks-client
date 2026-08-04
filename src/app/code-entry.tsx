@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
+import { VerificationCodeInput } from '@/components/verification-code-input';
 import { api } from '@/lib/api';
 import { usePolling } from '@/lib/hooks';
 import { useSafeBack } from '@/lib/navigation';
@@ -31,12 +31,8 @@ export default function CodeEntry() {
     [match?.qrToken],
   );
 
-  const verifyCode = () => {
-    if (code.length !== 6) {
-      setError('6자리 코드를 모두 입력해주세요.');
-      return;
-    }
-    if (!match || code !== verificationCode) {
+  const verifyCode = (submittedCode: string) => {
+    if (!match || submittedCode !== verificationCode) {
       setError('코드가 일치하지 않아요. 다시 확인해주세요.');
       return;
     }
@@ -69,23 +65,21 @@ export default function CodeEntry() {
           <Text style={s.title}>6자리 코드를 입력해주세요</Text>
           <Text style={s.description}>시설 QR 화면 아래에 표시된 숫자 코드예요.</Text>
 
-          <View style={[s.codeBox, error && s.codeBoxError]}>
-            <TextInput
-              autoFocus
-              value={code}
-              onChangeText={(value) => {
-                setCode(value.replace(/\D/g, '').slice(0, 6));
-                setError(null);
-              }}
-              keyboardType="number-pad"
-              maxLength={6}
-              placeholder="000000"
-              placeholderTextColor={C.gray}
-              style={s.codeInput}
-              textAlign="center"
-            />
-            <Text style={s.codeCount}>{code.length}/6</Text>
-          </View>
+          <VerificationCodeInput
+            value={code}
+            onChange={(value) => {
+              setCode(value);
+              setError(null);
+            }}
+            onComplete={verifyCode}
+            error={Boolean(error)}
+            disabled={!match}
+            autoFocus
+            accessibilityLabel="6자리 픽업 코드 입력"
+            style={s.codeFields}
+          />
+
+          <Text style={s.autoHint}>6자리를 입력하면 자동으로 확인됩니다.</Text>
 
           {error ? (
             <View style={s.errorBox}>
@@ -96,7 +90,6 @@ export default function CodeEntry() {
         </View>
 
         <View style={s.actions}>
-          <Button title="코드 확인" onPress={verifyCode} disabled={!match || code.length !== 6} />
           <Pressable onPress={goBackSafe} style={({ pressed }) => [s.scanButton, pressed && s.pressed]}>
             <Ionicons name="scan-outline" size={18} color={C.text} />
             <Text style={s.scanButtonText}>QR 스캔으로 돌아가기</Text>
@@ -124,14 +117,12 @@ const s = StyleSheet.create({
   codeIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   title: { color: C.text, fontSize: 22, lineHeight: 30, fontFamily: 'Pretendard-ExtraBold', textAlign: 'center' },
   description: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 7 },
-  codeBox: { width: '100%', maxWidth: 460, minHeight: 132, marginTop: 40, borderRadius: R.card, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderColor: C.line },
-  codeBoxError: { borderColor: C.red },
-  codeInput: { width: '100%', color: C.text, fontSize: 38, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 7, paddingHorizontal: 16, paddingVertical: 4 },
-  codeCount: { color: C.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
+  codeFields: { marginTop: 40 },
+  autoHint: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular', marginTop: 12 },
   errorBox: { width: '100%', maxWidth: 460, marginTop: 12, borderRadius: 12, backgroundColor: C.redSoft, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   errorText: { color: C.red, fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
-  actions: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line },
-  scanButton: { minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  actions: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line },
+  scanButton: { minHeight: 52, borderRadius: R.button, backgroundColor: C.graySoft, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   scanButtonText: { color: C.text, fontSize: 13.5, fontFamily: 'Pretendard-Bold' },
   pressed: { opacity: 0.65 },
 });
