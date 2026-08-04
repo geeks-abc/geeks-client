@@ -32,7 +32,8 @@ export function Button({
 }) {
   const bg =
     variant === 'primary' ? C.brand : variant === 'dark' ? C.navy : variant === 'danger' ? C.redSoft : C.graySoft;
-  const fg = variant === 'dark' ? '#FFF' : variant === 'danger' ? C.red : C.text;
+  const fg =
+    variant === 'primary' || variant === 'dark' ? '#FFF' : variant === 'danger' ? C.red : C.text;
   return (
     <Pressable
       onPress={onPress}
