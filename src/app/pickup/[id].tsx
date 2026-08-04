@@ -116,7 +116,9 @@ export default function PickupDetail() {
           <Text style={s.qrSub}>가게에서 스캔하면 전달 최종 확인으로 이어집니다.</Text>
           {match ? (
             <View style={s.qrCard}>
-              <QRCode value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })} size={220} color={C.navy} />
+              <View style={s.qrSafeZone}>
+                <QRCode value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })} size={196} color={C.navy} backgroundColor="#FFFFFF" />
+              </View>
               <Text style={s.qrItemName}>{match.listing?.itemName ?? '기부 식품'}</Text>
               <Text style={s.qrHint}>QR 스캔이 어려우면 아래 코드를 알려주세요.</Text>
               <Text style={s.directCode}>{directCode}</Text>
@@ -176,14 +178,16 @@ const s = StyleSheet.create({
   infoRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 10 },
   infoLabel: { color: C.sub, fontSize: 14, fontFamily: 'Pretendard-Regular' },
   infoValue: { flex: 1, color: C.text, fontSize: 14, fontFamily: 'Pretendard-SemiBold', textAlign: 'right' },
-  qrScreen: { flex: 1, backgroundColor: C.navy, padding: 24 },
-  qrLogo: { color: '#FFD21D', fontSize: 25, fontFamily: 'Pretendard-Black' },
-  qrTitle: { color: '#FFFFFF', fontSize: 27, lineHeight: 36, fontFamily: 'Pretendard-Black', marginTop: 42 },
-  qrSub: { color: '#AEB7C5', fontSize: 13, fontFamily: 'Pretendard-Regular', marginTop: 10 },
-  qrCard: { backgroundColor: '#FFFFFF', borderRadius: 24, alignItems: 'center', padding: 24, marginTop: 38 },
-  qrItemName: { color: C.navy, fontSize: 17, fontFamily: 'Pretendard-ExtraBold', marginTop: 20 },
+  qrScreen: { flex: 1, backgroundColor: '#FFFFFF', padding: 24 },
+  qrLogo: { color: C.brand, fontSize: 25, fontFamily: 'Pretendard-Black' },
+  qrTitle: { color: C.text, fontSize: 27, lineHeight: 36, fontFamily: 'Pretendard-Black', marginTop: 42 },
+  qrSub: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', marginTop: 10 },
+  qrCard: { backgroundColor: C.brandSoft, borderRadius: 24, alignItems: 'center', padding: 24, marginTop: 38 },
+  // QR 세이프존(quiet zone) — 스캔 인식률을 위한 QR 주변 흰 여백
+  qrSafeZone: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16 },
+  qrItemName: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold', marginTop: 20 },
   qrHint: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular', marginTop: 18 },
-  directCode: { color: C.navy, fontSize: 30, fontFamily: 'Pretendard-Black', letterSpacing: 5, marginTop: 6 },
+  directCode: { color: C.brand, fontSize: 30, fontFamily: 'Pretendard-Black', letterSpacing: 5, marginTop: 6 },
   actionBar: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: C.line },
   qrButton: { flex: 1, backgroundColor: '#FF6F0F' },
   callButton: { width: 54, height: 54, borderRadius: R.button, backgroundColor: '#FF6F0F', alignItems: 'center', justifyContent: 'center' },

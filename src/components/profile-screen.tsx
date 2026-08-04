@@ -59,6 +59,16 @@ export function ProfileScreen() {
         <Text style={s.sectionTitle}>계정</Text>
         <View style={s.card}>
           <Pressable
+            onPress={() => router.push('/verify-identity')}
+            style={({ pressed }) => [s.actionRow, pressed && { backgroundColor: C.bg }]}
+          >
+            <Ionicons name="create-outline" size={20} color={C.text} />
+            <Text style={s.editText}>내 정보 수정</Text>
+            <View style={{ flex: 1 }} />
+            <Ionicons name="chevron-forward" size={16} color={C.gray} />
+          </Pressable>
+          <View style={s.rowDivider} />
+          <Pressable
             onPress={signOut}
             style={({ pressed }) => [s.actionRow, pressed && { backgroundColor: C.bg }]}
           >
@@ -67,9 +77,7 @@ export function ProfileScreen() {
           </Pressable>
         </View>
 
-        <Text style={s.footnote}>
-          이음 데모 빌드 · 프로필 수정은 준비 중이에요
-        </Text>
+        <Text style={s.footnote}>이음 데모 빌드</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -120,6 +128,8 @@ const s = StyleSheet.create({
     paddingVertical: 14,
   },
   logoutText: { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: C.red },
+  editText: { fontSize: 15, fontFamily: 'Pretendard-SemiBold', color: C.text },
+  rowDivider: { height: StyleSheet.hairlineWidth, backgroundColor: C.line },
   footnote: {
     fontSize: 12,
     fontFamily: 'Pretendard-Regular',

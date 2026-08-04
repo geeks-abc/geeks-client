@@ -17,6 +17,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<Me>;
   quickLogin: (role: Role) => Promise<Me>;
   adoptToken: (accessToken: string) => Promise<Me>;
+  refresh: () => Promise<Me | null>;
   logout: () => Promise<void>;
 }
 
@@ -59,6 +60,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return profile;
   };
 
+  const refresh = async () => {
+    try {
+      const profile = await api.me();
+      setMe(profile);
+      return profile;
+    } catch {
+      return null;
+    }
+  };
+
   const login = async (email: string, password: string) => {
     const { accessToken } = await api.login(email, password);
     return adoptToken(accessToken);
@@ -77,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ me, loading, login, quickLogin, adoptToken, logout }}
+      value={{ me, loading, login, quickLogin, adoptToken, refresh, logout }}
     >
       {children}
     </AuthContext.Provider>

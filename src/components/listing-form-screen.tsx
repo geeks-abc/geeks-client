@@ -14,7 +14,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { buildSlots, nextSlotAfter, slotLabel, TimeSlotModal } from '@/components/time-picker';
+import { nextSlotAfter } from '@/components/time-picker';
+import { DateTimePickerModal, dateTimeLabel } from '@/components/date-time-picker';
 import { api, Listing } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
@@ -95,11 +96,6 @@ export function ListingFormScreen({ mode, listingId }: { mode: Mode; listingId?:
       .finally(() => setLoading(false));
   }, [listingId, mode]);
 
-  const startSlots = useMemo(() => buildSlots(firstSlot, 72), [firstSlot]);
-  const endSlots = useMemo(
-    () => buildSlots(new Date(pickupStart.getTime() + 5 * 60000), 72),
-    [pickupStart],
-  );
 
   const chooseStart = (slot: Date) => {
     setPickupStart(slot);
@@ -263,13 +259,13 @@ export function ListingFormScreen({ mode, listingId }: { mode: Mode; listingId?:
               <View style={s.timeColumn}>
                 <Text style={s.label}>픽업 시작</Text>
                 <Pressable onPress={() => setPicker('start')} style={({ pressed }) => [s.input, s.timeInput, pressed && s.pressed]}>
-                  <Text style={s.inputText}>{slotLabel(pickupStart)}</Text>
+                  <Text style={s.inputText}>{dateTimeLabel(pickupStart)}</Text>
                 </Pressable>
               </View>
               <View style={s.timeColumn}>
                 <Text style={s.label}>픽업 종료</Text>
                 <Pressable onPress={() => setPicker('end')} style={({ pressed }) => [s.input, s.timeInput, pressed && s.pressed]}>
-                  <Text style={s.inputText}>{slotLabel(pickupEnd)}</Text>
+                  <Text style={s.inputText}>{dateTimeLabel(pickupEnd)}</Text>
                 </Pressable>
               </View>
             </View>
@@ -299,19 +295,18 @@ export function ListingFormScreen({ mode, listingId }: { mode: Mode; listingId?:
           </ScrollView>
         </KeyboardAvoidingView>
 
-        <TimeSlotModal
+        <DateTimePickerModal
           visible={picker === 'start'}
-          title="픽업 시작 시간"
-          slots={startSlots}
+          title="픽업 시작"
           selected={pickupStart}
           onSelect={chooseStart}
           onClose={() => setPicker(null)}
         />
-        <TimeSlotModal
+        <DateTimePickerModal
           visible={picker === 'end'}
-          title="픽업 종료 시간"
-          slots={endSlots}
+          title="픽업 종료"
           selected={pickupEnd}
+          minDate={new Date(pickupStart.getTime() + 5 * 60000)}
           onSelect={setPickupEnd}
           onClose={() => setPicker(null)}
         />

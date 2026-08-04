@@ -141,6 +141,14 @@ export const api = {
       body: { email, password },
     }),
   me: () => request<Me>('/auth/me'),
+  // 마이페이지 정보 수정 — 서버 계약(팀원 구현 예정): PATCH /api/auth/me
+  // body: { nickname?, name?, address?, phone? } — name/address/phone은 연결된 가게/시설 프로필에 반영
+  updateProfile: (body: {
+    nickname?: string;
+    name?: string;
+    address?: string;
+    phone?: string;
+  }) => request<Me>('/auth/me', { method: 'PATCH', body }),
 
   // 전화번호 온보딩 (랜딩 → 번호 → 인증코드 → [신규] 닉네임·유형)
   phoneRequest: (phone: string) =>
