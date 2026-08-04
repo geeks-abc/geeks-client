@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BackButton } from '@/components/back-button';
 import { Button } from '@/components/ui';
@@ -103,7 +103,11 @@ export default function ListingDetail() {
 
           {listing ? (
             <>
-              <View style={s.storeRow}>
+              <Pressable
+                disabled={!store}
+                onPress={() => store && router.push(`/store-detail/${store.id}`)}
+                style={({ pressed }) => [s.storeRow, pressed && { opacity: 0.7 }]}
+              >
                 <View style={s.storeAvatar}>
                   <Text style={s.storeAvatarText}>{store?.name?.slice(0, 1) ?? '가'}</Text>
                 </View>
@@ -112,7 +116,7 @@ export default function ListingDetail() {
                   <Text numberOfLines={1} style={s.storeAddress}>{store?.address ?? '가게 위치 확인'}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={C.gray} />
-              </View>
+              </Pressable>
 
               <View style={s.divider} />
 

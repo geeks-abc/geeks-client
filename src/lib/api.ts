@@ -161,6 +161,7 @@ export const api = {
       body: { signupToken, nickname, role },
     }),
 
+  store: (id: number) => request<Store>(`/stores/${id}`),
   myListings: (storeId: number) => request<Listing[]>(`/listings?storeId=${storeId}`),
   listing: (id: number) => request<Listing>(`/listings/${id}`),
   createListing: (body: {

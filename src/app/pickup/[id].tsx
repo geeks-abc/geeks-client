@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { C, R } from '@/lib/theme';
 // S-05 매칭 상세 (시설) — 가게 정보와 픽업 안내를 우선 보여주는 거래형 화면
 export default function PickupDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const matchId = Number(id);
   const [qrOpen, setQrOpen] = useState(false);
   const { data: match } = usePolling(() => api.match(matchId), 5000);
@@ -37,7 +38,11 @@ export default function PickupDetail() {
             </View>
           </View>
 
-          <View style={s.storeRow}>
+          <Pressable
+            disabled={!store}
+            onPress={() => store && router.push(`/store-detail/${store.id}`)}
+            style={({ pressed }) => [s.storeRow, pressed && { opacity: 0.7 }]}
+          >
             <View style={s.storeAvatar}>
               <Text style={s.storeAvatarText}>{store?.name?.slice(0, 1) ?? '가'}</Text>
             </View>
@@ -46,7 +51,7 @@ export default function PickupDetail() {
               <Text numberOfLines={1} style={s.storeAddress}>{store?.address ?? '가게 위치 확인'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={C.gray} />
-          </View>
+          </Pressable>
 
           <View style={s.divider} />
 
