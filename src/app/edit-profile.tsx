@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui';
-import { api, ApiError } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { notify } from '@/lib/feedback';
 import { useSafeBack } from '@/lib/navigation';
@@ -28,7 +28,6 @@ export default function EditProfile() {
   const { me, refresh } = useAuth();
 
   const profile = me?.store ?? me?.facility;
-  const [nickname, setNickname] = useState(me?.nickname ?? '');
   const [name, setName] = useState(profile?.name ?? '');
   const [address, setAddress] = useState(profile?.address ?? '');
   const [phone, setPhone] = useState(profile?.phone ?? '');
@@ -47,7 +46,6 @@ export default function EditProfile() {
     setError(null);
     try {
       await api.updateProfile({
-        nickname: nickname.trim() || undefined,
         name: name.trim(),
         address: address.trim() || undefined,
         phone: phone.trim() || undefined,
@@ -56,13 +54,8 @@ export default function EditProfile() {
       notify.success('내 정보를 수정했어요');
       goBackSafe();
     } catch (e) {
-      if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
-        setError('수정 API가 아직 준비 중이에요. 서버 배포 후 다시 시도해주세요.');
-        notify.error('수정 API 준비 중', '서버 팀 배포 후 사용할 수 있어요.');
-      } else {
-        setError(e instanceof Error ? e.message : '수정에 실패했어요.');
-        notify.error('수정 실패', e instanceof Error ? e.message : undefined);
-      }
+      setError(e instanceof Error ? e.message : '수정에 실패했어요.');
+      notify.error('수정 실패', e instanceof Error ? e.message : undefined);
     } finally {
       setBusy(false);
     }
@@ -89,9 +82,6 @@ export default function EditProfile() {
         </View>
         <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
 
-          {me?.nickname != null ? (
-            <Field label="닉네임" value={nickname} onChangeText={setNickname} placeholder="닉네임" />
-          ) : null}
           <Field label={nameLabel} value={name} onChangeText={setName} placeholder={nameLabel} />
           <Field label="주소" value={address} onChangeText={setAddress} placeholder="서울 마포구 …" />
           <Field

@@ -1,7 +1,37 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// 역할별 탭 구성 — 단일 소스 (레이아웃에서 중복 정의 금지)
+const STORE_TABS: Record<string, TabMeta> = {
+  index: { icon: 'home', label: '홈' },
+  history: { icon: 'receipt', label: '내역' },
+  profile: { icon: 'person', label: '내 정보' },
+};
+
+const FACILITY_TABS: Record<string, TabMeta> = {
+  index: { icon: 'storefront', label: '피드' },
+  pickups: { icon: 'qr-code', label: '픽업' },
+  history: { icon: 'receipt', label: '내역' },
+  profile: { icon: 'person', label: '내 정보' },
+};
+
+// 가게/시설 공용 탭 내비게이터 — 양쪽 레이아웃이 이 컴포넌트 하나만 사용
+export function RoleTabs({ role }: { role: 'STORE' | 'FACILITY' }) {
+  const tabs = role === 'STORE' ? STORE_TABS : FACILITY_TABS;
+  return (
+    <Tabs
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <AppTabBar {...props} tabs={tabs} />}
+    >
+      {Object.keys(tabs).map((name) => (
+        <Tabs.Screen key={name} name={name} />
+      ))}
+    </Tabs>
+  );
+}
 
 export interface TabMeta {
   icon?: keyof typeof Ionicons.glyphMap; // 채워진 아이콘 이름 (비활성은 -outline 자동)
