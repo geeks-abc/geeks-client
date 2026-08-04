@@ -35,7 +35,10 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="store" />
         <Stack.Screen name="facility" />
-        <Stack.Screen name="new-listing" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="new-listing"
+          options={{ animation: Platform.OS === 'web' ? 'none' : 'slide_from_bottom' }}
+        />
         <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       </Stack>
       <Toaster position="top-center" />

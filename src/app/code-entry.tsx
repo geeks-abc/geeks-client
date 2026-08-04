@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -5,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { usePolling } from '@/lib/hooks';
-import { C } from '@/lib/theme';
 import { useSafeBack } from '@/lib/navigation';
+import { C, R } from '@/lib/theme';
 
 // S-05B 직접 코드 입력 — QR 토큰의 숫자 6자리를 확인한 뒤 최종 확인으로 이동
 export default function CodeEntry() {
@@ -17,7 +18,10 @@ export default function CodeEntry() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { data: match } = usePolling(
-    () => (Number.isFinite(numericMatchId) && numericMatchId > 0 ? api.match(numericMatchId) : Promise.reject(new Error('매칭 정보를 찾을 수 없어요.'))),
+    () =>
+      Number.isFinite(numericMatchId) && numericMatchId > 0
+        ? api.match(numericMatchId)
+        : Promise.reject(new Error('매칭 정보를 찾을 수 없어요.')),
     5000,
     [numericMatchId],
   );
@@ -44,21 +48,28 @@ export default function CodeEntry() {
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
+      <View style={s.navbar}>
+        <Pressable
+          accessibilityLabel="QR 스캔으로 돌아가기"
+          hitSlop={10}
+          onPress={goBackSafe}
+          style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+        >
+          <Ionicons name="chevron-back" size={26} color={C.text} />
+        </Pressable>
+        <Text style={s.navTitle}>코드 직접 입력</Text>
+        <View style={s.navButton} />
+      </View>
+
       <View style={s.screen}>
-        <View style={s.header}>
-          <View>
-            <Text style={s.logo}>이음</Text>
-            <Text style={s.screenLabel}>CODE ENTRY</Text>
-          </View>
-          <Text style={s.step}>S-05B</Text>
-        </View>
-
         <View style={s.content}>
-          <Text style={s.eyebrow}>직접 입력 코드</Text>
-          <Text style={s.title}>시설이 알려주는{`\n`}6자리 코드를 입력하세요.</Text>
-          <Text style={s.sub}>QR 스캔이 어려울 때 사용할 수 있습니다.</Text>
+          <View style={s.codeIcon}>
+            <Ionicons name="keypad-outline" size={27} color={C.brand} />
+          </View>
+          <Text style={s.title}>6자리 코드를 입력해주세요</Text>
+          <Text style={s.description}>시설 QR 화면 아래에 표시된 숫자 코드예요.</Text>
 
-          <View style={s.codeBox}>
+          <View style={[s.codeBox, error && s.codeBoxError]}>
             <TextInput
               autoFocus
               value={code}
@@ -69,22 +80,27 @@ export default function CodeEntry() {
               keyboardType="number-pad"
               maxLength={6}
               placeholder="000000"
-              placeholderTextColor="#677489"
+              placeholderTextColor={C.gray}
               style={s.codeInput}
               textAlign="center"
             />
-            <Text style={s.codeHint}>6자리 숫자</Text>
+            <Text style={s.codeCount}>{code.length}/6</Text>
           </View>
 
-          {error ? <Text style={s.error}>{error}</Text> : null}
+          {error ? (
+            <View style={s.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color={C.red} />
+              <Text style={s.errorText}>{error}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={s.actions}>
-          <Button title="코드 확인" onPress={verifyCode} disabled={!match} style={s.yellowButton} />
-          <Pressable onPress={goBackSafe} style={s.cancelButton}>
-            <Text style={s.cancelText}>QR 스캔으로 돌아가기</Text>
+          <Button title="코드 확인" onPress={verifyCode} disabled={!match || code.length !== 6} />
+          <Pressable onPress={goBackSafe} style={({ pressed }) => [s.scanButton, pressed && s.pressed]}>
+            <Ionicons name="scan-outline" size={18} color={C.text} />
+            <Text style={s.scanButtonText}>QR 스캔으로 돌아가기</Text>
           </Pressable>
-          <Text style={s.help}>코드는 한 번만 사용할 수 있으며,{`\n`}확인 완료 후 자동으로 전달됩니다.</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -92,23 +108,30 @@ export default function CodeEntry() {
 }
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E9E9E6' },
-  screen: { flex: 1, backgroundColor: C.navy, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between' },
-  logo: { color: '#FFFFFF', fontSize: 25, fontFamily: 'Pretendard-Black' },
-  screenLabel: { color: '#AEB7C5', fontSize: 10, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.7 },
-  step: { color: '#FFD21D', fontSize: 11, fontFamily: 'Pretendard-ExtraBold' },
-  content: { flex: 1, paddingTop: 42 },
-  eyebrow: { color: '#FFD21D', fontSize: 11, fontFamily: 'Pretendard-ExtraBold', marginBottom: 22 },
-  title: { color: '#FFFFFF', fontSize: 25, fontFamily: 'Pretendard-Black', lineHeight: 33, letterSpacing: -0.8 },
-  sub: { color: '#AEB7C5', fontSize: 12, fontFamily: 'Pretendard-Regular', marginTop: 10 },
-  codeBox: { marginTop: 46, minHeight: 147, borderWidth: 1, borderColor: '#41516B', borderRadius: 20, justifyContent: 'center', gap: 5 },
-  codeInput: { color: '#FFFFFF', fontSize: 39, fontFamily: 'Pretendard-Black', letterSpacing: 5, paddingHorizontal: 10 },
-  codeHint: { color: '#AEB7C5', fontSize: 11, fontFamily: 'Pretendard-Regular', textAlign: 'center' },
-  error: { color: '#FF8B80', fontSize: 12, fontFamily: 'Pretendard-SemiBold', textAlign: 'center', marginTop: 14 },
-  actions: { gap: 12 },
-  yellowButton: { backgroundColor: '#FFD21D' },
-  cancelButton: { minHeight: 48, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  cancelText: { color: C.navy, fontSize: 13, fontFamily: 'Pretendard-ExtraBold' },
-  help: { color: '#98A4B5', fontSize: 10.5, fontFamily: 'Pretendard-Regular', lineHeight: 16, marginTop: 15 },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  navbar: {
+    height: 56,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+  },
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  content: { flex: 1, paddingHorizontal: 20, paddingTop: 52, alignItems: 'center' },
+  codeIcon: { width: 58, height: 58, borderRadius: 29, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  title: { color: C.text, fontSize: 22, lineHeight: 30, fontFamily: 'Pretendard-ExtraBold', textAlign: 'center' },
+  description: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 7 },
+  codeBox: { width: '100%', maxWidth: 460, minHeight: 132, marginTop: 40, borderRadius: R.card, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center', gap: 4, borderWidth: 1, borderColor: C.line },
+  codeBoxError: { borderColor: C.red },
+  codeInput: { width: '100%', color: C.text, fontSize: 38, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 7, paddingHorizontal: 16, paddingVertical: 4 },
+  codeCount: { color: C.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
+  errorBox: { width: '100%', maxWidth: 460, marginTop: 12, borderRadius: 12, backgroundColor: C.redSoft, padding: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  errorText: { color: C.red, fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
+  actions: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line },
+  scanButton: { minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  scanButtonText: { color: C.text, fontSize: 13.5, fontFamily: 'Pretendard-Bold' },
+  pressed: { opacity: 0.65 },
 });

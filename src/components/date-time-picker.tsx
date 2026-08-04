@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { SLOT_MINUTES, nextSlotAfter } from '@/components/time-picker';
 import { C } from '@/lib/theme';
@@ -84,7 +85,17 @@ export function DateTimePickerModal({
 
   return (
     <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet}>
-      <Text style={s.title}>{title}</Text>
+      <View style={s.sheetHeader}>
+        <Text style={s.title}>{title}</Text>
+        <Pressable
+          accessibilityLabel="시간 선택창 닫기"
+          hitSlop={8}
+          onPress={onClose}
+          style={({ pressed }) => [s.closeButton, pressed && { opacity: 0.65 }]}
+        >
+          <Ionicons name="close" size={21} color={C.text} />
+        </Pressable>
+      </View>
 
       <ScrollView
         horizontal
@@ -140,7 +151,23 @@ const s = StyleSheet.create({
     paddingBottom: 40,
     gap: 16,
   },
+  sheetHeader: {
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: C.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: C.line,
+  },
   dayRow: { gap: 8, paddingBottom: 4 },
   dayChip: {
     paddingHorizontal: 14,

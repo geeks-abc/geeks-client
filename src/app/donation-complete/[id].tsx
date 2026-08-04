@@ -9,93 +9,108 @@ import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { homePath, useAuth } from '@/lib/auth';
 import { fmtDateTime } from '@/lib/hooks';
-import { useSafeBack } from '@/lib/navigation';
-import { C } from '@/lib/theme';
+import { C, R } from '@/lib/theme';
 
 type Certificate = Awaited<ReturnType<typeof api.certificate>>;
 
-// 기부 완료 — 증명서를 인라인으로 보여주고 PDF 다운로드까지
+// 기부 완료 — 완료 내역과 발급된 확인서를 한 화면에서 안내
 export default function DonationComplete() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const goBackSafe = useSafeBack();
   const { me } = useAuth();
   const donationId = Number(id);
   const [cert, setCert] = useState<Certificate | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
-    api.certificate(donationId).then(setCert).catch(() => {});
+    setLoadFailed(false);
+    api.certificate(donationId)
+      .then(setCert)
+      .catch(() => setLoadFailed(true));
   }, [donationId]);
+
+  const goHome = () => router.replace(me ? homePath(me.role) : '/');
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
       <View style={s.navbar}>
-        <Pressable
-          onPress={goBackSafe}
-          hitSlop={10}
-          style={({ pressed }) => pressed && { opacity: 0.6 }}
-        >
-          <Ionicons name="chevron-back" size={26} color={C.text} />
-        </Pressable>
+        <View style={s.navButton} />
         <Text style={s.navTitle}>기부 완료</Text>
-        <View style={{ width: 26 }} />
+        <Pressable
+          accessibilityLabel="홈으로 이동"
+          hitSlop={10}
+          onPress={goHome}
+          style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+        >
+          <Ionicons name="close" size={25} color={C.text} />
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         <View style={s.hero}>
-          <View style={s.checkOuter}>
-            <View style={s.checkIcon}>
-              <Ionicons name="checkmark" size={34} color="#FFFFFF" />
-            </View>
+          <View style={s.completeIcon}>
+            <Ionicons name="checkmark" size={38} color="#FFFFFF" />
           </View>
-          <Text style={s.title}>기부가 완료됐어요!</Text>
-          <Text style={s.sub}>
+          <Text style={s.title}>기부가 완료되었어요</Text>
+          <Text style={s.description}>
             {cert
-              ? `${cert.beneficiary.name}에\n${cert.itemName} ${cert.quantity}개가 전달됐어요.`
-              : '전달 내역을 불러오고 있어요.'}
+              ? `${cert.beneficiary.name}에 ${cert.itemName} ${cert.quantity}개가 전달됐어요.`
+              : loadFailed
+                ? '기부는 완료되었지만 내역을 불러오지 못했어요.'
+                : '완료된 기부 내역을 불러오고 있어요.'}
           </Text>
         </View>
 
-        {/* 인라인 증명서 */}
-        <View style={s.paper}>
-          <Text style={s.paperTitle}>식품 기부 확인서</Text>
-          <Text style={s.serial}>NO. {cert?.serialNumber ?? '…'}</Text>
-          <View style={s.divider} />
+        <View style={s.certificateNotice}>
+          <View style={s.noticeIcon}>
+            <Ionicons name="document-text-outline" size={21} color={C.brand} />
+          </View>
+          <View style={s.noticeCopy}>
+            <Text style={s.noticeTitle}>기부 확인서가 발급됐어요</Text>
+            <Text style={s.noticeDescription}>필요할 때 PDF로 내려받을 수 있어요.</Text>
+          </View>
+          <Ionicons name="checkmark-circle" size={20} color={C.brand} />
+        </View>
 
+        <Text style={s.sectionTitle}>기부 내역</Text>
+        <View style={s.detailCard}>
           {cert ? (
             <>
-              <PaperRow label="기부자" value={cert.donor.name} />
-              <PaperRow label="수혜 시설" value={cert.beneficiary.name} />
-              <PaperRow label="품목" value={cert.itemName} />
-              <PaperRow label="수량" value={`총 ${cert.quantity}개 (${cert.weightKg}kg)`} />
-              <PaperRow label="인수 일시" value={fmtDateTime(cert.completedAt)} />
+              <DetailRow label="기부한 곳" value={cert.donor.name} />
+              <DetailRow label="전달받은 곳" value={cert.beneficiary.name} />
+              <DetailRow label="기부 상품" value={`${cert.itemName} ${cert.quantity}개`} />
+              <DetailRow label="환산 무게" value={`${cert.weightKg}kg`} />
+              <DetailRow label="완료 시간" value={fmtDateTime(cert.completedAt)} last />
             </>
+          ) : loadFailed ? (
+            <View style={s.loadError}>
+              <Ionicons name="alert-circle-outline" size={20} color={C.red} />
+              <Text style={s.loadErrorText}>기부 내역을 불러오지 못했습니다.</Text>
+            </View>
           ) : (
-            <View style={{ gap: 12, paddingVertical: 4 }}>
+            <View style={s.skeletonList}>
+              <Skeleton height={14} width="76%" />
+              <Skeleton height={14} width="64%" />
               <Skeleton height={14} width="70%" />
-              <Skeleton height={14} width="55%" />
-              <Skeleton height={14} width="62%" />
+              <Skeleton height={14} width="58%" />
             </View>
           )}
-
-          <View style={s.stampRow}>
-            <Text style={s.stampCaption}>이음</Text>
-            <View style={s.stamp}>
-              <Text style={s.stampText}>확인</Text>
-            </View>
-          </View>
         </View>
+
+        {cert ? (
+          <Text style={s.serial}>기부 완료 번호  {cert.serialNumber}</Text>
+        ) : null}
       </ScrollView>
 
       <View style={s.actionBar}>
         <Button
-          title="PDF 다운로드"
+          title="기부 확인서 PDF 받기"
           disabled={!cert}
           onPress={() => WebBrowser.openBrowserAsync(api.certificatePdfUrl(donationId))}
         />
         <Pressable
-          onPress={() => router.replace(me ? homePath(me.role) : '/')}
-          style={({ pressed }) => [s.homeButton, pressed && { opacity: 0.6 }]}
+          onPress={goHome}
+          style={({ pressed }) => [s.homeButton, pressed && s.pressed]}
         >
           <Text style={s.homeButtonText}>홈으로</Text>
         </Pressable>
@@ -104,11 +119,11 @@ export default function DonationComplete() {
   );
 }
 
-function PaperRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
   return (
-    <View style={s.paperRow}>
-      <Text style={s.paperLabel}>{label}</Text>
-      <Text style={s.paperValue}>{value}</Text>
+    <View style={[s.detailRow, !last && s.detailDivider]}>
+      <Text style={s.detailLabel}>{label}</Text>
+      <Text style={s.detailValue}>{value}</Text>
     </View>
   );
 }
@@ -116,99 +131,66 @@ function PaperRow({ label, value }: { label: string; value: string }) {
 const s = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   navbar: {
+    height: 56,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
   },
-  navTitle: { fontSize: 17, fontFamily: 'Pretendard-ExtraBold', color: C.text },
-  content: { padding: 24, paddingTop: 16, gap: 24 },
-  hero: { alignItems: 'center', gap: 10 },
-  checkOuter: {
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    backgroundColor: C.brandSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  content: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
   },
-  checkIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  hero: { alignItems: 'center', paddingHorizontal: 18, marginBottom: 32 },
+  completeIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: C.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 20,
   },
-  title: { color: C.text, fontSize: 25, fontFamily: 'Pretendard-Black', letterSpacing: -0.6 },
-  sub: {
-    color: C.sub,
-    fontSize: 14,
-    fontFamily: 'Pretendard-Regular',
-    lineHeight: 21,
-    textAlign: 'center',
-  },
-  paper: {
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: C.line,
-    padding: 22,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-  },
-  paperTitle: {
-    fontSize: 18,
-    fontFamily: 'Pretendard-Black',
-    color: C.text,
-    textAlign: 'center',
-  },
-  serial: {
-    fontSize: 11,
-    fontFamily: 'Pretendard-Regular',
-    color: C.sub,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  divider: { height: 1, backgroundColor: C.line, marginVertical: 16 },
-  paperRow: {
+  title: { color: C.text, fontSize: 24, lineHeight: 33, fontFamily: 'Pretendard-ExtraBold', textAlign: 'center' },
+  description: { color: C.sub, fontSize: 14, lineHeight: 21, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 8 },
+  certificateNotice: {
+    minHeight: 76,
+    borderRadius: R.card,
+    backgroundColor: C.brandSoft,
+    paddingHorizontal: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-    paddingVertical: 7,
-  },
-  paperLabel: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular' },
-  paperValue: {
-    flex: 1,
-    color: C.text,
-    fontSize: 13.5,
-    fontFamily: 'Pretendard-Bold',
-    textAlign: 'right',
-  },
-  stampRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 14,
+    gap: 12,
+    marginBottom: 28,
   },
-  stampCaption: { fontSize: 14, fontFamily: 'Pretendard-ExtraBold', color: C.text },
-  stamp: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 2,
-    borderColor: C.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
+  noticeIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  noticeCopy: { flex: 1, gap: 3 },
+  noticeTitle: { color: C.text, fontSize: 14, fontFamily: 'Pretendard-Bold' },
+  noticeDescription: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
+  sectionTitle: { color: C.text, fontSize: 15, fontFamily: 'Pretendard-Bold', marginBottom: 10 },
+  detailCard: {
+    borderRadius: R.card,
+    backgroundColor: C.bg,
+    paddingHorizontal: 18,
+    paddingVertical: 5,
   },
-  stampText: { color: C.brand, fontSize: 12, fontFamily: 'Pretendard-ExtraBold' },
-  actionBar: { padding: 20, paddingTop: 8, gap: 6, backgroundColor: '#FFFFFF' },
+  detailRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 18 },
+  detailDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E3E7E5' },
+  detailLabel: { width: 72, color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular' },
+  detailValue: { flex: 1, color: C.text, fontSize: 13.5, lineHeight: 19, textAlign: 'right', fontFamily: 'Pretendard-SemiBold' },
+  skeletonList: { gap: 18, paddingVertical: 20 },
+  loadError: { minHeight: 80, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  loadErrorText: { color: C.red, fontSize: 12.5, fontFamily: 'Pretendard-SemiBold' },
+  serial: { color: C.gray, fontSize: 11, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 14 },
+  actionBar: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 12, gap: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line, backgroundColor: '#FFFFFF' },
   homeButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   homeButtonText: { color: C.sub, fontSize: 14, fontFamily: 'Pretendard-Bold' },
+  pressed: { opacity: 0.62 },
 });

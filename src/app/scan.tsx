@@ -1,12 +1,13 @@
+import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
-import { C } from '@/lib/theme';
-import { useSafeBack } from '@/lib/navigation';
 import { notify } from '@/lib/feedback';
+import { useSafeBack } from '@/lib/navigation';
+import { C, R } from '@/lib/theme';
 
 // S-05 가게 QR 스캔 — 시설이 제시한 토큰을 최종 확인 화면으로 전달
 export default function Scan() {
@@ -33,113 +34,164 @@ export default function Scan() {
         pathname: '/delivery-confirm',
         params: { matchId: String(payload.matchId), qrToken: payload.qrToken },
       });
-    } catch (e) {
+    } catch (caughtError) {
       const now = Date.now();
       if (now - lastErrorAt.current > 2500) {
         lastErrorAt.current = now;
-        notify.error('스캔 실패', e instanceof Error ? e.message : '올바른 이음 QR이 아니에요.');
+        notify.error(
+          '스캔 실패',
+          caughtError instanceof Error ? caughtError.message : '올바른 이음 QR이 아니에요.',
+        );
       }
     } finally {
       setBusy(false);
     }
   };
 
-  if (!permission?.granted) {
-    return (
-      <SafeAreaView style={s.permissionScreen}>
-        <Text style={s.logo}>이음</Text>
-        <View style={s.permissionContent}>
-          <View style={s.permissionIcon}><Text style={s.permissionIconText}>QR</Text></View>
-          <Text style={s.permissionTitle}>카메라 권한이 필요해요</Text>
-          <Text style={s.permissionSub}>시설이 보여주는 QR을 스캔해 전달을 확인합니다.</Text>
-        </View>
-        <Button title="카메라 권한 허용" onPress={requestPermission} style={s.yellowButton} />
-        <Button title="뒤로" variant="ghost" onPress={goBackSafe} />
-      </SafeAreaView>
-    );
-  }
+  const openCodeEntry = () => {
+    router.push({ pathname: '/code-entry', params: matchId ? { matchId } : {} });
+  };
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-      <View style={s.screen}>
-        <View style={s.header}>
-          <View>
-            <Text style={s.logo}>이음</Text>
-            <Text style={s.screenLabel}>FACILITY QR SCAN</Text>
-          </View>
-          <Text style={s.step}>S-05</Text>
-        </View>
-
-        <View style={s.intro}>
-          <Text style={s.title}>시설이 보여주는 QR을{`\n`}화면 안에 맞춰주세요.</Text>
-          <Text style={s.sub}>인수 확인 후 전달 완료로 처리됩니다.</Text>
-        </View>
-
-        <View style={s.scannerBox}>
-          <CameraView
-            style={s.camera}
-            enableTorch={torchEnabled}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={busy ? undefined : ({ data }) => onScanned(data)}
-          />
-          <View pointerEvents="none" style={s.scanGuide}>
-            <View style={[s.corner, s.topLeft]} />
-            <View style={[s.corner, s.topRight]} />
-            <View style={[s.corner, s.bottomLeft]} />
-            <View style={[s.corner, s.bottomRight]} />
-          </View>
-        </View>
-
-        <View style={s.actions}>
-          <View style={s.inlineActions}>
-            <Pressable onPress={() => setTorchEnabled((enabled) => !enabled)} style={s.secondaryButton}>
-              <Text style={s.secondaryButtonText}>{torchEnabled ? '손전등 끄기' : '손전등 켜기'}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => router.push({ pathname: '/code-entry', params: matchId ? { matchId } : {} })}
-              style={s.secondaryButton}
-            >
-              <Text style={s.secondaryButtonText}>코드 직접 입력</Text>
-            </Pressable>
-          </View>
-          <Pressable onPress={goBackSafe} style={s.cancelButton}>
-            <Text style={s.cancelButtonText}>스캔 취소</Text>
-          </Pressable>
-        </View>
+      <View style={s.navbar}>
+        <Pressable
+          accessibilityLabel="뒤로 가기"
+          hitSlop={10}
+          onPress={goBackSafe}
+          style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+        >
+          <Ionicons name="chevron-back" size={26} color={C.text} />
+        </Pressable>
+        <Text style={s.navTitle}>QR 스캔</Text>
+        <View style={s.navButton} />
       </View>
+
+      {!permission?.granted ? (
+        <View style={s.permissionScreen}>
+          <View style={s.permissionContent}>
+            <View style={s.permissionIcon}>
+              <Ionicons name="camera-outline" size={34} color={C.brand} />
+            </View>
+            <Text style={s.permissionTitle}>카메라 권한이 필요해요</Text>
+            <Text style={s.permissionDescription}>
+              시설이 보여주는 QR을 스캔하려면{`\n`}카메라 사용을 허용해주세요.
+            </Text>
+          </View>
+          <View style={s.permissionAction}>
+            <Button title="카메라 권한 허용" onPress={requestPermission} />
+          </View>
+        </View>
+      ) : (
+        <View style={s.screen}>
+          <View style={s.intro}>
+            <Text style={s.title}>시설 QR을 스캔해주세요</Text>
+            <Text style={s.description}>QR 전체가 사각형 안에 들어오도록 맞춰주세요.</Text>
+          </View>
+
+          <View style={s.scannerFrame}>
+            <CameraView
+              style={s.camera}
+              enableTorch={torchEnabled}
+              barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+              onBarcodeScanned={busy ? undefined : ({ data }) => onScanned(data)}
+            />
+            <View pointerEvents="none" style={s.scanOverlay}>
+              <View style={[s.corner, s.topLeft]} />
+              <View style={[s.corner, s.topRight]} />
+              <View style={[s.corner, s.bottomLeft]} />
+              <View style={[s.corner, s.bottomRight]} />
+              <View style={s.scanLine} />
+            </View>
+          </View>
+
+          <Text style={s.scanHint}>QR을 인식하면 자동으로 다음 화면으로 이동합니다.</Text>
+
+          <View style={s.actions}>
+            <View style={s.tools}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setTorchEnabled((enabled) => !enabled)}
+                style={({ pressed }) => [s.toolButton, torchEnabled && s.toolButtonActive, pressed && s.pressed]}
+              >
+                <Ionicons
+                  name={torchEnabled ? 'flash' : 'flash-outline'}
+                  size={20}
+                  color={torchEnabled ? C.brand : C.text}
+                />
+                <Text style={s.toolText}>{torchEnabled ? '손전등 끄기' : '손전등 켜기'}</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={openCodeEntry}
+                style={({ pressed }) => [s.toolButton, pressed && s.pressed]}
+              >
+                <Ionicons name="keypad-outline" size={20} color={C.text} />
+                <Text style={s.toolText}>코드 직접 입력</Text>
+              </Pressable>
+            </View>
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={goBackSafe}
+              style={({ pressed }) => [s.closeButton, pressed && s.pressed]}
+            >
+              <Text style={s.closeButtonText}>닫기</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E9E9E6' },
-  screen: { flex: 1, backgroundColor: C.navy, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, gap: 24 },
-  header: { flexDirection: 'row', justifyContent: 'space-between' },
-  logo: { color: '#FFFFFF', fontSize: 25, fontFamily: 'Pretendard-Black' },
-  screenLabel: { color: '#AEB7C5', fontSize: 10, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.7 },
-  step: { color: '#FFD21D', fontSize: 11, fontFamily: 'Pretendard-ExtraBold' },
-  intro: { gap: 7 },
-  title: { color: '#FFFFFF', fontSize: 25, fontFamily: 'Pretendard-Black', lineHeight: 33, letterSpacing: -0.8 },
-  sub: { color: '#AEB7C5', fontSize: 12, fontFamily: 'Pretendard-Regular' },
-  scannerBox: { flex: 1, minHeight: 300, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: '#748195' },
+  safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
+  navbar: {
+    height: 56,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+  },
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  screen: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingTop: 14 },
+  intro: { gap: 6, marginBottom: 14 },
+  title: { color: C.text, fontSize: 22, lineHeight: 30, fontFamily: 'Pretendard-ExtraBold' },
+  description: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular' },
+  scannerFrame: {
+    width: '100%',
+    maxWidth: 520,
+    aspectRatio: 1,
+    alignSelf: 'center',
+    borderRadius: 22,
+    overflow: 'hidden',
+    backgroundColor: C.navy,
+  },
   camera: { flex: 1 },
-  scanGuide: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
-  corner: { position: 'absolute', width: 66, height: 66, borderColor: '#FFD21D' },
-  topLeft: { top: 22, left: 22, borderTopWidth: 5, borderLeftWidth: 5, borderTopLeftRadius: 5 },
-  topRight: { top: 22, right: 22, borderTopWidth: 5, borderRightWidth: 5, borderTopRightRadius: 5 },
-  bottomLeft: { bottom: 22, left: 22, borderBottomWidth: 5, borderLeftWidth: 5, borderBottomLeftRadius: 5 },
-  bottomRight: { bottom: 22, right: 22, borderBottomWidth: 5, borderRightWidth: 5, borderBottomRightRadius: 5 },
-  actions: { gap: 12 },
-  inlineActions: { flexDirection: 'row', gap: 10 },
-  secondaryButton: { flex: 1, borderRadius: 14, minHeight: 48, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  secondaryButtonText: { color: C.navy, fontSize: 13, fontFamily: 'Pretendard-ExtraBold' },
-  cancelButton: { minHeight: 48, borderRadius: 14, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
-  cancelButtonText: { color: C.navy, fontSize: 13, fontFamily: 'Pretendard-ExtraBold' },
-  permissionScreen: { flex: 1, backgroundColor: C.navy, padding: 28, justifyContent: 'space-between' },
-  permissionContent: { alignItems: 'center', gap: 12 },
-  permissionIcon: { width: 84, height: 84, borderRadius: 24, backgroundColor: '#FFD21D', alignItems: 'center', justifyContent: 'center' },
-  permissionIconText: { color: C.navy, fontSize: 21, fontFamily: 'Pretendard-Black' },
-  permissionTitle: { color: '#FFFFFF', fontSize: 23, fontFamily: 'Pretendard-Black' },
-  permissionSub: { color: '#AEB7C5', fontSize: 13, fontFamily: 'Pretendard-Regular', textAlign: 'center' },
-  yellowButton: { backgroundColor: '#FFD21D' },
+  scanOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.12)' },
+  corner: { position: 'absolute', width: 56, height: 56, borderColor: C.brand },
+  topLeft: { top: 24, left: 24, borderTopWidth: 5, borderLeftWidth: 5, borderTopLeftRadius: 8 },
+  topRight: { top: 24, right: 24, borderTopWidth: 5, borderRightWidth: 5, borderTopRightRadius: 8 },
+  bottomLeft: { bottom: 24, left: 24, borderBottomWidth: 5, borderLeftWidth: 5, borderBottomLeftRadius: 8 },
+  bottomRight: { bottom: 24, right: 24, borderBottomWidth: 5, borderRightWidth: 5, borderBottomRightRadius: 8 },
+  scanLine: { position: 'absolute', left: 54, right: 54, top: '50%', height: 2, borderRadius: 1, backgroundColor: C.brand },
+  scanHint: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 12 },
+  actions: { marginTop: 'auto', paddingTop: 14, paddingBottom: 8, gap: 10 },
+  tools: { flexDirection: 'row', gap: 10 },
+  toolButton: { flex: 1, height: 52, borderRadius: R.button, backgroundColor: C.graySoft, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  toolButtonActive: { backgroundColor: C.brandSoft },
+  toolText: { color: C.text, fontSize: 13, fontFamily: 'Pretendard-Bold' },
+  closeButton: { height: 52, borderRadius: R.button, backgroundColor: C.graySoft, alignItems: 'center', justifyContent: 'center' },
+  closeButtonText: { color: C.text, fontSize: 14, fontFamily: 'Pretendard-Bold' },
+  permissionScreen: { flex: 1, backgroundColor: '#FFFFFF', paddingHorizontal: 20, justifyContent: 'space-between' },
+  permissionContent: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
+  permissionIcon: { width: 80, height: 80, borderRadius: 40, backgroundColor: C.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  permissionTitle: { color: C.text, fontSize: 21, fontFamily: 'Pretendard-ExtraBold' },
+  permissionDescription: { color: C.sub, fontSize: 13, lineHeight: 20, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 8 },
+  permissionAction: { paddingBottom: 12 },
+  pressed: { opacity: 0.65 },
 });

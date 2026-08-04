@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,33 +11,21 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BottomSheet } from '@/components/bottom-sheet';
+import { dateTimeLabel } from '@/components/date-time-picker';
 import { api, ListingStatus } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
-import { useSafeBack } from '@/lib/navigation';
 import { notify } from '@/lib/feedback';
-
-const P = {
-  outer: '#E7E7E3',
-  surface: '#F9F9F5',
-  white: '#FFFFFF',
-  orange: '#FF9740',
-  navy: '#051224',
-  sub: '#6B7078',
-  line: '#E0E3E0',
-  green: '#E86618',
-  greenSoft: '#FFEFE2',
-  paleYellow: '#FFECA5',
-  red: '#C53B32',
-  redSoft: '#FCE9E7',
-};
+import { remainingLabel, usePolling } from '@/lib/hooks';
+import { useSafeBack } from '@/lib/navigation';
+import { C, R } from '@/lib/theme';
 
 const STATUS: Record<ListingStatus, { label: string; fg: string; bg: string }> = {
-  OPEN: { label: '모집 중', fg: P.green, bg: P.greenSoft },
-  MATCHED: { label: '픽업 예정', fg: P.navy, bg: P.paleYellow },
-  COMPLETED: { label: '전달 완료', fg: P.white, bg: P.navy },
-  EXPIRED: { label: '마감', fg: P.sub, bg: '#EEF0EE' },
-  CANCELLED: { label: '취소', fg: P.sub, bg: '#EEF0EE' },
+  OPEN: { label: '모집 중', fg: C.brandDeep, bg: C.brandSoft },
+  MATCHED: { label: '픽업 예정', fg: C.blue, bg: C.blueSoft },
+  COMPLETED: { label: '전달 완료', fg: '#FFFFFF', bg: C.navy },
+  EXPIRED: { label: '마감', fg: C.sub, bg: C.graySoft },
+  CANCELLED: { label: '취소', fg: C.sub, bg: C.graySoft },
 };
 
 export default function ListingDetail() {
@@ -55,20 +42,16 @@ export default function ListingDetail() {
 
   const { data: listing, refresh } = usePolling(() => api.listing(listingId), 3000);
 
-  const remaining = listing
-    ? remainingLabel(listing.pickupEnd).replace(/\s+\S+$/, '')
-    : '-';
-
   const cancelListing = async () => {
     setBusy(true);
     setError(null);
     try {
       await api.cancelListing(listingId);
-      notify.success('나눔 등록을 취소했어요');
+      notify.success('나눌 등록을 취소했어요');
       setCancelOpen(false);
       router.replace('/store');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '등록을 취소하지 못했습니다.');
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : '등록을 취소하지 못했습니다.');
     } finally {
       setBusy(false);
     }
@@ -82,9 +65,9 @@ export default function ListingDetail() {
       const match = await api.applyMatch(listingId, me.facilityId);
       notify.success('픽업이 확정됐어요', '픽업 정보를 확인해주세요.');
       router.replace(`/pickup/${match.id}`);
-    } catch (e) {
-      notify.error('픽업 신청 실패', e instanceof Error ? e.message : undefined);
-      setError(e instanceof Error ? e.message : '픽업 신청에 실패했습니다.');
+    } catch (caughtError) {
+      notify.error('픽업 신청 실패', caughtError instanceof Error ? caughtError.message : undefined);
+      setError(caughtError instanceof Error ? caughtError.message : '픽업 신청에 실패했습니다.');
       refresh();
     } finally {
       setBusy(false);
@@ -100,8 +83,8 @@ export default function ListingDetail() {
       const donation = donations.find((item) => item.matchId === listing.match?.id);
       if (!donation) throw new Error('기부 완료 확인서를 찾을 수 없습니다.');
       router.push(`/certificate/${donation.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '확인서를 불러오지 못했습니다.');
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : '확인서를 불러오지 못했습니다.');
     } finally {
       setBusy(false);
     }
@@ -111,7 +94,7 @@ export default function ListingDetail() {
     return (
       <SafeAreaView style={s.safeArea}>
         <View style={s.loading}>
-          <ActivityIndicator color={P.navy} />
+          <ActivityIndicator color={C.brand} />
         </View>
       </SafeAreaView>
     );
@@ -119,155 +102,199 @@ export default function ListingDetail() {
 
   const status = STATUS[listing.status];
   const storeAddress = listing.store?.address ?? me?.store?.address ?? '-';
+  const hasBottomAction =
+    (isFacility && listing.status === 'OPEN') ||
+    (!isFacility && ['OPEN', 'MATCHED', 'COMPLETED'].includes(listing.status));
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
       <View style={s.screen}>
-        <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-          <View style={s.header}>
-            <View>
-              <Text style={s.logo}>이음</Text>
-              <Text style={s.englishLabel}>LISTING DETAIL</Text>
-            </View>
-            <Pressable onPress={goBackSafe} style={({ pressed }) => pressed && s.pressed}>
-              <Text style={s.close}>닫기</Text>
-            </Pressable>
-          </View>
+        <View style={s.navbar}>
+          <Pressable
+            accessibilityLabel="뒤로 가기"
+            hitSlop={10}
+            onPress={goBackSafe}
+            style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+          >
+            <Ionicons name="chevron-back" size={26} color={C.text} />
+          </Pressable>
+          <Text style={s.navTitle}>상품 상세</Text>
+          <View style={s.navButton} />
+        </View>
 
+        <ScrollView
+          contentContainerStyle={[s.content, hasBottomAction && s.contentWithAction]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={s.photoBox}>
             {listing.photoUrl ? (
-              <Image transition={150} source={{ uri: listing.photoUrl }} style={s.photo} />
+              <Image transition={150} source={{ uri: listing.photoUrl }} style={s.photo} contentFit="cover" />
             ) : (
-              <View style={s.photoFallback} />
+              <View style={s.photoFallback}>
+                <Ionicons name="fast-food-outline" size={46} color={C.brand} />
+                <Text style={s.photoFallbackText}>등록된 사진이 없어요</Text>
+              </View>
             )}
-            <View style={s.photoFooter}>
-              <Text style={s.photoFooterText}>FOOD</Text>
-            </View>
           </View>
 
           {listing.store ? (
             <Pressable
               onPress={() => router.push(`/store-detail/${listing.store!.id}`)}
-              style={({ pressed }) => [s.storeLink, pressed && s.pressed]}
+              style={({ pressed }) => [s.storeRow, pressed && s.rowPressed]}
             >
               <View style={s.storeAvatar}>
-                <Text style={s.storeAvatarText}>{listing.store.name.slice(0, 1)}</Text>
+                <Ionicons name="storefront" size={20} color={C.brand} />
               </View>
-              <View style={s.storeLinkInfo}>
-                <Text style={s.storeLinkName}>{listing.store.name}</Text>
-                <Text numberOfLines={1} style={s.storeLinkAddress}>{listing.store.address}</Text>
+              <View style={s.storeInfo}>
+                <Text style={s.storeName}>{listing.store.name}</Text>
+                <Text numberOfLines={1} style={s.storeAddress}>{listing.store.address}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={P.sub} />
+              <Text style={s.storeMore}>가게 보기</Text>
+              <Ionicons name="chevron-forward" size={17} color={C.gray} />
             </Pressable>
           ) : null}
 
-          <View style={[s.statusPill, { backgroundColor: status.bg }]}>
-            <Text style={[s.statusText, { color: status.fg }]}>{status.label}</Text>
+          <View style={s.divider} />
+
+          <View style={s.productSection}>
+            <View style={[s.statusPill, { backgroundColor: status.bg }]}>
+              <Text style={[s.statusText, { color: status.fg }]}>{status.label}</Text>
+            </View>
+            <Text style={s.title}>{listing.itemName}</Text>
+            <Text style={s.summary}>
+              {listing.quantity}개 · {remainingLabel(listing.pickupEnd)}
+            </Text>
           </View>
 
-          <Text style={s.title}>{listing.itemName}</Text>
-          <Text style={s.meta}>총 {listing.quantity}개 · 오늘 {fmtTime(listing.pickupStart)}–{fmtTime(listing.pickupEnd)}</Text>
-
+          <Text style={s.sectionTitle}>픽업 정보</Text>
           <View style={s.infoCard}>
-            <InfoRow label="등록 위치" value={storeAddress} />
-            <InfoRow label="노출 범위" value="반경 3km" />
-            <InfoRow label="남은 시간" value={remaining} last />
+            <InfoRow label="시작" value={dateTimeLabel(new Date(listing.pickupStart))} />
+            <InfoRow label="종료" value={dateTimeLabel(new Date(listing.pickupEnd))} />
+            <InfoRow label="장소" value={storeAddress} last />
           </View>
 
           {listing.match?.facility ? (
-            <View style={s.matchCard}>
-              <Text style={s.matchLabel}>픽업 시설</Text>
-              <Text style={s.matchName}>{listing.match.facility.name}</Text>
-            </View>
+            <>
+              <Text style={s.sectionTitle}>픽업 시설</Text>
+              <View style={s.matchCard}>
+                <View style={s.facilityIcon}>
+                  <Ionicons name="home-outline" size={20} color={C.blue} />
+                </View>
+                <View style={s.matchInfo}>
+                  <Text style={s.matchName}>{listing.match.facility.name}</Text>
+                  <Text style={s.matchMeta}>픽업이 확정된 시설이에요.</Text>
+                </View>
+              </View>
+            </>
           ) : null}
 
-          {error ? (
+          {error && !cancelOpen ? (
             <View style={s.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color={C.red} />
               <Text style={s.errorText}>{error}</Text>
             </View>
           ) : null}
-
-          {!isFacility && listing.status === 'OPEN' ? (
-            <View style={s.actionRow}>
-              <Pressable
-                onPress={() => router.push(`/edit-listing/${listing.id}`)}
-                style={({ pressed }) => [s.secondaryButton, pressed && s.pressed]}
-              >
-                <Text style={s.secondaryButtonText}>등록 내용 수정</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => setCancelOpen(true)}
-                style={({ pressed }) => [s.primaryButton, pressed && s.pressed]}
-              >
-                <Text style={s.primaryButtonText}>등록 취소</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {!isFacility && listing.status === 'MATCHED' && listing.match ? (
-            <View style={{ gap: 10 }}>
-              <Pressable
-                onPress={() => router.push(`/scan?matchId=${listing.match?.id}`)}
-                style={({ pressed }) => [s.fullButton, pressed && s.pressed]}
-              >
-                <Text style={s.primaryButtonText}>시설 QR 스캔하고 전달 완료</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push(`/match/${listing.match?.id}`)}
-                style={({ pressed }) => [s.secondaryButton, { alignSelf: 'stretch' }, pressed && s.pressed]}
-              >
-                <Text style={s.secondaryButtonText}>매칭 상세 보기</Text>
-              </Pressable>
-            </View>
-          ) : null}
-
-          {!isFacility && listing.status === 'COMPLETED' ? (
-            <Pressable
-              disabled={busy}
-              onPress={openCertificate}
-              style={({ pressed }) => [s.fullButton, (pressed || busy) && s.pressed]}
-            >
-              {busy ? <ActivityIndicator color={P.white} /> : <Text style={s.primaryButtonText}>기부 완료 확인서 보기</Text>}
-            </Pressable>
-          ) : null}
-
-          {isFacility && listing.status === 'OPEN' ? (
-            <Pressable
-              disabled={busy}
-              onPress={applyForPickup}
-              style={({ pressed }) => [s.fullButton, (pressed || busy) && s.pressed]}
-            >
-              {busy ? <ActivityIndicator color={P.white} /> : <Text style={s.primaryButtonText}>픽업 신청하기</Text>}
-            </Pressable>
-          ) : null}
         </ScrollView>
+
+        {hasBottomAction ? (
+          <View style={s.actionBar}>
+            {!isFacility && listing.status === 'OPEN' ? (
+              <>
+                <Pressable
+                  onPress={() => setCancelOpen(true)}
+                  style={({ pressed }) => [s.cancelButton, pressed && s.pressed]}
+                >
+                  <Text style={s.cancelButtonText}>등록 취소</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push(`/edit-listing/${listing.id}`)}
+                  style={({ pressed }) => [s.primaryButton, pressed && s.pressed]}
+                >
+                  <Text style={s.primaryButtonText}>수정하기</Text>
+                </Pressable>
+              </>
+            ) : null}
+
+            {!isFacility && listing.status === 'MATCHED' && listing.match ? (
+              <>
+                <Pressable
+                  onPress={() => router.push(`/match/${listing.match?.id}`)}
+                  style={({ pressed }) => [s.secondaryButton, pressed && s.pressed]}
+                >
+                  <Text style={s.secondaryButtonText}>매칭 정보</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push(`/scan?matchId=${listing.match?.id}`)}
+                  style={({ pressed }) => [s.primaryButton, pressed && s.pressed]}
+                >
+                  <Text style={s.primaryButtonText}>QR 스캔</Text>
+                </Pressable>
+              </>
+            ) : null}
+
+            {!isFacility && listing.status === 'COMPLETED' ? (
+              <Pressable
+                disabled={busy}
+                onPress={openCertificate}
+                style={({ pressed }) => [s.primaryButton, s.fullButton, (pressed || busy) && s.pressed]}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={s.primaryButtonText}>기부 완료 확인서 보기</Text>
+                )}
+              </Pressable>
+            ) : null}
+
+            {isFacility && listing.status === 'OPEN' ? (
+              <Pressable
+                disabled={busy}
+                onPress={applyForPickup}
+                style={({ pressed }) => [s.primaryButton, s.fullButton, (pressed || busy) && s.pressed]}
+              >
+                {busy ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={s.primaryButtonText}>픽업 신청하기</Text>
+                )}
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
-      <Modal visible={cancelOpen} transparent animationType="fade" onRequestClose={() => setCancelOpen(false)}>
-        <View style={s.modalBackdrop}>
-          <View style={s.modalCard}>
-            <Text style={s.modalTitle}>기부 등록을 취소할까요?</Text>
-            <Text style={s.modalDescription}>취소하면 주변 시설에서{`\n`}더 이상 확인할 수 없습니다.</Text>
-            {error ? <Text style={s.modalError}>{error}</Text> : null}
-            <View style={s.modalActions}>
-              <Pressable
-                disabled={busy}
-                onPress={() => setCancelOpen(false)}
-                style={({ pressed }) => [s.modalGhost, pressed && s.pressed]}
-              >
-                <Text style={s.modalGhostText}>돌아가기</Text>
-              </Pressable>
-              <Pressable
-                disabled={busy}
-                onPress={cancelListing}
-                style={({ pressed }) => [s.modalPrimary, (pressed || busy) && s.pressed]}
-              >
-                {busy ? <ActivityIndicator color={P.white} /> : <Text style={s.modalPrimaryText}>등록 취소</Text>}
-              </Pressable>
-            </View>
-          </View>
+      <BottomSheet visible={cancelOpen} onClose={() => !busy && setCancelOpen(false)} sheetStyle={s.cancelSheet}>
+        <View style={s.sheetHeader}>
+          <Text style={s.sheetTitle}>기부 등록을 취소할까요?</Text>
+          <Pressable
+            accessibilityLabel="취소 확인창 닫기"
+            disabled={busy}
+            hitSlop={8}
+            onPress={() => setCancelOpen(false)}
+            style={({ pressed }) => pressed && s.pressed}
+          >
+            <Ionicons name="close" size={24} color={C.text} />
+          </Pressable>
         </View>
-      </Modal>
+        <Text style={s.sheetDescription}>취소하면 주변 시설에서 더 이상 이 상품을 확인할 수 없어요.</Text>
+        {error ? <Text style={s.sheetError}>{error}</Text> : null}
+        <View style={s.sheetActions}>
+          <Pressable
+            disabled={busy}
+            onPress={() => setCancelOpen(false)}
+            style={({ pressed }) => [s.sheetSecondary, pressed && s.pressed]}
+          >
+            <Text style={s.sheetSecondaryText}>돌아가기</Text>
+          </Pressable>
+          <Pressable
+            disabled={busy}
+            onPress={cancelListing}
+            style={({ pressed }) => [s.sheetDanger, (pressed || busy) && s.pressed]}
+          >
+            {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={s.sheetDangerText}>등록 취소</Text>}
+          </Pressable>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -276,73 +303,121 @@ function InfoRow({ label, value, last = false }: { label: string; value: string;
   return (
     <View style={[s.infoRow, !last && s.infoDivider]}>
       <Text style={s.infoLabel}>{label}</Text>
-      <Text numberOfLines={1} style={s.infoValue}>{value}</Text>
+      <Text numberOfLines={2} style={s.infoValue}>{value}</Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: P.outer },
-  screen: {
-    flex: 1,
-    marginHorizontal: 12,
-    borderRadius: 28,
-    backgroundColor: P.surface,
-    overflow: 'hidden',
-  },
+  safeArea: { flex: 1, backgroundColor: C.bg },
+  screen: { flex: 1, backgroundColor: C.bg },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 40 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  logo: { color: P.navy, fontSize: 23, lineHeight: 32, fontFamily: 'Pretendard-Black' },
-  englishLabel: { color: P.sub, fontSize: 10, lineHeight: 14, fontFamily: 'Pretendard-Bold' },
-  close: { color: P.navy, fontSize: 13, lineHeight: 18, fontFamily: 'Pretendard-Bold', paddingTop: 4 },
-  photoBox: {
-    height: 210,
-    borderRadius: 24,
-    backgroundColor: P.orange,
-    overflow: 'hidden',
-    marginTop: 28,
-    justifyContent: 'flex-end',
+  navbar: {
+    height: 56,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: C.card,
   },
-  photo: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
-  photoFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: P.orange },
-  photoFooter: { height: 48, backgroundColor: P.navy, justifyContent: 'center', paddingHorizontal: 16 },
-  photoFooterText: { color: P.white, fontSize: 11, lineHeight: 15, fontFamily: 'Pretendard-Bold' },
-  storeLink: { minHeight: 70, marginTop: 16, borderRadius: 18, backgroundColor: P.white, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
-  storeAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0DB' },
-  storeAvatarText: { color: '#E86618', fontSize: 16, fontFamily: 'Pretendard-ExtraBold' },
-  storeLinkInfo: { flex: 1, gap: 2 },
-  storeLinkName: { color: P.navy, fontSize: 14, fontFamily: 'Pretendard-ExtraBold' },
-  storeLinkAddress: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
-  statusPill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, marginTop: 24 },
-  statusText: { fontSize: 10, lineHeight: 14, fontFamily: 'Pretendard-Bold' },
-  title: { color: P.navy, fontSize: 27, lineHeight: 38, fontFamily: 'Pretendard-Black', marginTop: 16, letterSpacing: -0.7 },
-  meta: { color: P.sub, fontSize: 12, lineHeight: 17, fontFamily: 'Pretendard-Regular', marginTop: 3 },
-  infoCard: { backgroundColor: P.white, borderRadius: 24, marginTop: 36, paddingHorizontal: 16 },
-  infoRow: { minHeight: 53, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  infoDivider: { borderBottomWidth: 1, borderBottomColor: '#F0F1EF' },
-  infoLabel: { color: P.sub, fontSize: 11, lineHeight: 15, fontFamily: 'Pretendard-Regular' },
-  infoValue: { flex: 1, color: P.navy, fontSize: 12, lineHeight: 17, fontFamily: 'Pretendard-Bold', textAlign: 'right' },
-  matchCard: { backgroundColor: P.white, borderRadius: 18, padding: 16, marginTop: 12 },
-  matchLabel: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
-  matchName: { color: P.navy, fontSize: 16, fontFamily: 'Pretendard-Bold', marginTop: 5 },
-  errorBox: { borderRadius: 14, backgroundColor: P.redSoft, padding: 12, marginTop: 14 },
-  errorText: { color: P.red, fontSize: 12, lineHeight: 17, fontFamily: 'Pretendard-SemiBold' },
-  actionRow: { flexDirection: 'row', gap: 10, marginTop: 38 },
-  secondaryButton: { flex: 1, height: 54, borderRadius: 18, backgroundColor: P.white, alignItems: 'center', justifyContent: 'center' },
-  secondaryButtonText: { color: P.navy, fontSize: 15, lineHeight: 21, fontFamily: 'Pretendard-Bold' },
-  primaryButton: { flex: 1, height: 54, borderRadius: 18, backgroundColor: P.navy, alignItems: 'center', justifyContent: 'center' },
-  fullButton: { height: 54, borderRadius: 18, backgroundColor: P.navy, alignItems: 'center', justifyContent: 'center', marginTop: 38 },
-  primaryButtonText: { color: P.white, fontSize: 15, lineHeight: 21, fontFamily: 'Pretendard-Bold' },
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  content: { paddingBottom: 32 },
+  contentWithAction: { paddingBottom: 28 },
+  photoBox: { width: '100%', height: 284, backgroundColor: C.brandSoft },
+  photo: { width: '100%', height: '100%' },
+  photoFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 },
+  photoFallbackText: { color: C.brandDeep, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
+  storeRow: {
+    minHeight: 78,
+    marginHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  storeAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeInfo: { flex: 1, gap: 3 },
+  storeName: { color: C.text, fontSize: 14.5, fontFamily: 'Pretendard-Bold' },
+  storeAddress: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
+  storeMore: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-SemiBold' },
+  divider: { height: 8, backgroundColor: '#ECEFED' },
+  productSection: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 30 },
+  statusPill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
+  statusText: { fontSize: 11.5, fontFamily: 'Pretendard-ExtraBold' },
+  title: { color: C.text, fontSize: 24, lineHeight: 33, fontFamily: 'Pretendard-ExtraBold', marginTop: 13 },
+  summary: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', marginTop: 7 },
+  sectionTitle: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: 'Pretendard-Bold',
+    marginHorizontal: 20,
+    marginBottom: 10,
+  },
+  infoCard: {
+    marginHorizontal: 20,
+    marginBottom: 26,
+    paddingHorizontal: 18,
+    paddingVertical: 4,
+    borderRadius: R.card,
+    backgroundColor: C.card,
+  },
+  infoRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  infoDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line },
+  infoLabel: { width: 38, color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular' },
+  infoValue: { flex: 1, color: C.text, fontSize: 13.5, lineHeight: 19, textAlign: 'right', fontFamily: 'Pretendard-SemiBold' },
+  matchCard: {
+    minHeight: 72,
+    marginHorizontal: 20,
+    marginBottom: 26,
+    paddingHorizontal: 16,
+    borderRadius: R.card,
+    backgroundColor: C.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  facilityIcon: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.blueSoft, alignItems: 'center', justifyContent: 'center' },
+  matchInfo: { flex: 1, gap: 3 },
+  matchName: { color: C.text, fontSize: 14.5, fontFamily: 'Pretendard-Bold' },
+  matchMeta: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
+  errorBox: { marginHorizontal: 20, borderRadius: 12, backgroundColor: C.redSoft, padding: 13, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  errorText: { flex: 1, color: C.red, fontSize: 12, lineHeight: 17, fontFamily: 'Pretendard-SemiBold' },
+  actionBar: {
+    minHeight: 78,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.line,
+    backgroundColor: C.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  primaryButton: { flex: 1, height: 54, borderRadius: R.button, backgroundColor: C.brand, alignItems: 'center', justifyContent: 'center' },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 15.5, fontFamily: 'Pretendard-Bold' },
+  secondaryButton: { flex: 1, height: 54, borderRadius: R.button, backgroundColor: C.navy, alignItems: 'center', justifyContent: 'center' },
+  secondaryButtonText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Pretendard-Bold' },
+  cancelButton: { flex: 0.72, height: 54, borderRadius: R.button, backgroundColor: C.graySoft, alignItems: 'center', justifyContent: 'center' },
+  cancelButtonText: { color: C.red, fontSize: 14.5, fontFamily: 'Pretendard-Bold' },
+  fullButton: { flex: 1 },
+  rowPressed: { opacity: 0.58 },
   pressed: { opacity: 0.72 },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(5,18,36,0.24)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 48 },
-  modalCard: { alignSelf: 'stretch', minHeight: 300, borderRadius: 28, backgroundColor: P.white, paddingHorizontal: 20, paddingTop: 28, paddingBottom: 28 },
-  modalTitle: { color: P.navy, fontSize: 24, lineHeight: 33, fontFamily: 'Pretendard-Black' },
-  modalDescription: { color: P.sub, fontSize: 13, lineHeight: 20, fontFamily: 'Pretendard-Regular', marginTop: 28 },
-  modalError: { color: P.red, fontSize: 12, fontFamily: 'Pretendard-SemiBold', marginTop: 12 },
-  modalActions: { flexDirection: 'row', gap: 20, marginTop: 'auto' },
-  modalGhost: { flex: 1, height: 54, borderRadius: 18, backgroundColor: P.white, alignItems: 'center', justifyContent: 'center' },
-  modalGhostText: { color: P.navy, fontSize: 15, fontFamily: 'Pretendard-Bold' },
-  modalPrimary: { flex: 1, height: 54, borderRadius: 18, backgroundColor: P.navy, alignItems: 'center', justifyContent: 'center' },
-  modalPrimaryText: { color: P.white, fontSize: 15, fontFamily: 'Pretendard-Bold' },
+  cancelSheet: { backgroundColor: C.card, paddingHorizontal: 20, paddingBottom: 28 },
+  sheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  sheetTitle: { flex: 1, color: C.text, fontSize: 20, lineHeight: 28, fontFamily: 'Pretendard-ExtraBold' },
+  sheetDescription: { color: C.sub, fontSize: 13, lineHeight: 20, fontFamily: 'Pretendard-Regular' },
+  sheetError: { color: C.red, fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
+  sheetActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  sheetSecondary: { flex: 1, height: 52, borderRadius: R.button, backgroundColor: C.graySoft, alignItems: 'center', justifyContent: 'center' },
+  sheetSecondaryText: { color: C.text, fontSize: 15, fontFamily: 'Pretendard-Bold' },
+  sheetDanger: { flex: 1, height: 52, borderRadius: R.button, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center' },
+  sheetDangerText: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Pretendard-Bold' },
 });

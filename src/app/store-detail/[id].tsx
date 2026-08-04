@@ -3,23 +3,36 @@ import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton } from '@/components/back-button';
 import { api } from '@/lib/api';
 import { usePolling } from '@/lib/hooks';
+import { useSafeBack } from '@/lib/navigation';
 import { C, R } from '@/lib/theme';
 
 // 가게 상세 — 픽업 전 위치와 연락처를 확인하는 가게 프로필
 export default function StoreDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const storeId = Number(id);
+  const goBackSafe = useSafeBack();
   const { data: store } = usePolling(() => api.store(storeId), 5000, [storeId]);
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
       <View style={s.screen}>
+        <View style={s.navbar}>
+          <Pressable
+            accessibilityLabel="뒤로 가기"
+            hitSlop={10}
+            onPress={goBackSafe}
+            style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+          >
+            <Ionicons name="chevron-back" size={26} color={C.text} />
+          </Pressable>
+          <Text style={s.navTitle}>가게 정보</Text>
+          <View style={s.navButton} />
+        </View>
+
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           <View style={s.hero}>
-            <View style={s.backButton}><BackButton /></View>
             <View style={s.heroIcon}>
               <Ionicons name="storefront-outline" size={44} color="#FFFFFF" />
             </View>
@@ -83,9 +96,18 @@ function InfoRow({ icon, label, value }: { icon: 'location-outline' | 'call-outl
 const s = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#FFFFFF' },
   screen: { flex: 1, backgroundColor: '#FFFFFF' },
+  navbar: {
+    height: 56,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+  },
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
   content: { paddingBottom: 38 },
   hero: { height: 244, backgroundColor: '#F39A55', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  backButton: { position: 'absolute', top: 16, left: 20 },
   heroIcon: { width: 82, height: 82, borderRadius: 41, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
   heroLabel: { color: '#FFFFFF', fontSize: 12, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 1.2 },
   profileSection: { alignItems: 'center', paddingHorizontal: 20, paddingTop: 28, paddingBottom: 24, gap: 5 },
@@ -107,4 +129,5 @@ const s = StyleSheet.create({
   callButton: { minHeight: 54, borderRadius: R.button, backgroundColor: '#FF6F0F', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   callButtonText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Pretendard-ExtraBold' },
   disabledButton: { backgroundColor: C.gray },
+  pressed: { opacity: 0.62 },
 });

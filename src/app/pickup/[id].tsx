@@ -111,21 +111,55 @@ export default function PickupDetail() {
 
       <Modal visible={qrOpen} animationType="slide" onRequestClose={() => setQrOpen(false)}>
         <SafeAreaView style={s.qrScreen} edges={['top', 'bottom']}>
-          <Text style={s.qrLogo}>이음</Text>
-          <Text style={s.qrTitle}>가게 담당자에게{`\n`}이 QR을 보여주세요.</Text>
-          <Text style={s.qrSub}>가게에서 스캔하면 전달 최종 확인으로 이어집니다.</Text>
-          {match ? (
-            <View style={s.qrCard}>
-              <View style={s.qrSafeZone}>
-                <QRCode value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })} size={196} color={C.navy} backgroundColor="#FFFFFF" />
-              </View>
-              <Text style={s.qrItemName}>{match.listing?.itemName ?? '기부 식품'}</Text>
-              <Text style={s.qrHint}>QR 스캔이 어려우면 아래 코드를 알려주세요.</Text>
-              <Text style={s.directCode}>{directCode}</Text>
+          <View style={s.qrNavbar}>
+            <View style={s.qrNavButton} />
+            <Text style={s.qrNavTitle}>시설 QR</Text>
+            <Pressable
+              accessibilityLabel="시설 QR 화면 닫기"
+              hitSlop={10}
+              onPress={() => setQrOpen(false)}
+              style={({ pressed }) => [s.qrNavButton, pressed && { opacity: 0.6 }]}
+            >
+              <Ionicons name="close" size={25} color={C.text} />
+            </Pressable>
+          </View>
+
+          <ScrollView contentContainerStyle={s.qrContent} showsVerticalScrollIndicator={false}>
+            <View style={s.qrIntro}>
+              <Text style={s.qrTitle}>가게 담당자에게 QR을 보여주세요</Text>
+              <Text style={s.qrSub}>스캔이 완료되면 전달 확인 화면으로 이동해요.</Text>
             </View>
-          ) : null}
-          <View style={{ flex: 1 }} />
-          <Button title="닫기" variant="ghost" onPress={() => setQrOpen(false)} />
+
+            {match ? (
+              <View style={s.qrCard}>
+                <View style={s.qrSafeZone}>
+                  <QRCode
+                    value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })}
+                    size={196}
+                    color={C.navy}
+                    backgroundColor="#FFFFFF"
+                  />
+                </View>
+                <View style={s.qrItemInfo}>
+                  <Text style={s.qrItemLabel}>픽업 상품</Text>
+                  <Text numberOfLines={1} style={s.qrItemName}>{match.listing?.itemName ?? '기부 식품'}</Text>
+                </View>
+                <View style={s.codeSection}>
+                  <Text style={s.qrHint}>QR 인식이 어려우면 이 코드를 알려주세요</Text>
+                  <Text style={s.directCode}>{directCode}</Text>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={s.qrNotice}>
+              <Ionicons name="information-circle-outline" size={18} color={C.sub} />
+              <Text style={s.qrNoticeText}>전달 완료 전까지 이 화면을 닫지 마세요.</Text>
+            </View>
+          </ScrollView>
+
+          <View style={s.qrActionBar}>
+            <Button title="닫기" variant="ghost" onPress={() => setQrOpen(false)} />
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
@@ -178,16 +212,26 @@ const s = StyleSheet.create({
   infoRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 10 },
   infoLabel: { color: C.sub, fontSize: 14, fontFamily: 'Pretendard-Regular' },
   infoValue: { flex: 1, color: C.text, fontSize: 14, fontFamily: 'Pretendard-SemiBold', textAlign: 'right' },
-  qrScreen: { flex: 1, backgroundColor: '#FFFFFF', padding: 24 },
-  qrLogo: { color: C.brand, fontSize: 25, fontFamily: 'Pretendard-Black' },
-  qrTitle: { color: C.text, fontSize: 27, lineHeight: 36, fontFamily: 'Pretendard-Black', marginTop: 42 },
-  qrSub: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', marginTop: 10 },
-  qrCard: { backgroundColor: C.brandSoft, borderRadius: 24, alignItems: 'center', padding: 24, marginTop: 38 },
+  qrScreen: { flex: 1, backgroundColor: '#FFFFFF' },
+  qrNavbar: { height: 56, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF' },
+  qrNavButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  qrNavTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  qrContent: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 28 },
+  qrIntro: { alignItems: 'center', paddingHorizontal: 16 },
+  qrTitle: { color: C.text, fontSize: 22, lineHeight: 30, fontFamily: 'Pretendard-ExtraBold', textAlign: 'center' },
+  qrSub: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular', textAlign: 'center', marginTop: 7 },
+  qrCard: { backgroundColor: C.bg, borderRadius: R.card, alignItems: 'center', padding: 20, marginTop: 28 },
   // QR 세이프존(quiet zone) — 스캔 인식률을 위한 QR 주변 흰 여백
-  qrSafeZone: { backgroundColor: '#FFFFFF', padding: 20, borderRadius: 16 },
-  qrItemName: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold', marginTop: 20 },
-  qrHint: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular', marginTop: 18 },
-  directCode: { color: C.brand, fontSize: 30, fontFamily: 'Pretendard-Black', letterSpacing: 5, marginTop: 6 },
+  qrSafeZone: { backgroundColor: '#FFFFFF', padding: 18, borderRadius: 16 },
+  qrItemInfo: { width: '100%', alignItems: 'center', marginTop: 18 },
+  qrItemLabel: { color: C.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
+  qrItemName: { maxWidth: '100%', color: C.text, fontSize: 16, fontFamily: 'Pretendard-Bold', marginTop: 3 },
+  codeSection: { width: '100%', alignItems: 'center', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#E3E7E5', marginTop: 18, paddingTop: 16 },
+  qrHint: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
+  directCode: { color: C.brand, fontSize: 29, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 5, marginTop: 6 },
+  qrNotice: { borderRadius: 14, backgroundColor: C.graySoft, padding: 13, marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  qrNoticeText: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
+  qrActionBar: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line, backgroundColor: '#FFFFFF' },
   actionBar: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: C.line },
   qrButton: { flex: 1, backgroundColor: '#FF6F0F' },
   callButton: { width: 54, height: 54, borderRadius: R.button, backgroundColor: '#FF6F0F', alignItems: 'center', justifyContent: 'center' },
