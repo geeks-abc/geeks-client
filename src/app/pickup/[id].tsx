@@ -6,11 +6,13 @@ import { Button, Card, Row } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 // S-05 매칭 상세 (시설) — 픽업 정보 + QR 스캔/완료 + 전화 + 취소
 export default function PickupDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const matchId = Number(id);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export default function PickupDetail() {
     setError(null);
     try {
       await api.cancelMatch(matchId);
-      router.back();
+      goBackSafe();
     } catch (e) {
       setError(e instanceof Error ? e.message : '취소에 실패했어요.');
     } finally {

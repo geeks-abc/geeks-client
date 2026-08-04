@@ -7,11 +7,13 @@ import { Badge, Button, Card, Row } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 // S-03 매칭 상세 (가게) — 시설이 스캔할 QR 표시, 완료를 폴링으로 감지
 export default function StoreMatchDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const matchId = Number(id);
 
   const { data: match } = usePolling(() => api.match(matchId), 3000);
@@ -67,7 +69,7 @@ export default function StoreMatchDetail() {
           <Button title="기부확인서 확인하러 가기" variant="dark" onPress={() => router.replace('/store/history')} />
         ) : null}
 
-        <Button title="뒤로" variant="ghost" onPress={() => router.back()} />
+        <Button title="뒤로" variant="ghost" onPress={() => goBackSafe()} />
       </ScrollView>
     </SafeAreaView>
   );

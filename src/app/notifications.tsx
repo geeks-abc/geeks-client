@@ -7,6 +7,7 @@ import { api, Notice } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fmtDateTime, usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 const TYPE_LABEL: Record<string, string> = {
   NEW_LISTING: '주변에 새로운 나눔',
@@ -18,6 +19,7 @@ const TYPE_LABEL: Record<string, string> = {
 export default function Notifications() {
   const { me } = useAuth();
   const router = useRouter();
+  const goBackSafe = useSafeBack();
 
   const recipient =
     me?.role === 'STORE' && me.storeId
@@ -63,7 +65,7 @@ export default function Notifications() {
             </Card>
           ))
         )}
-        <Button title="닫기" variant="ghost" onPress={() => router.back()} />
+        <Button title="닫기" variant="ghost" onPress={() => goBackSafe()} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -7,6 +7,7 @@ import { Button, Row } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtDateTime } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 type Certificate = Awaited<ReturnType<typeof api.certificate>>;
 
@@ -14,6 +15,7 @@ type Certificate = Awaited<ReturnType<typeof api.certificate>>;
 export default function CertificateScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const donationId = Number(id);
   const [cert, setCert] = useState<Certificate | null>(null);
 
@@ -47,7 +49,7 @@ export default function CertificateScreen() {
           variant="dark"
           onPress={() => WebBrowser.openBrowserAsync(api.certificatePdfUrl(donationId))}
         />
-        <Button title="닫기" variant="ghost" onPress={() => router.back()} />
+        <Button title="닫기" variant="ghost" onPress={() => goBackSafe()} />
       </ScrollView>
     </SafeAreaView>
   );

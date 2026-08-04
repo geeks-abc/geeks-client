@@ -25,10 +25,12 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
 import { C, R } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 // S-02 품목 등록 — "30초면 등록 끝!"
 export default function NewListing() {
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const { me } = useAuth();
 
   // 화면 진입 시각 기준으로 슬롯 고정 (현재 시각 다음 5분 경계부터, 6시간 범위)
@@ -105,7 +107,7 @@ export default function NewListing() {
         pickupStart: pickupStart.toISOString(),
         pickupEnd: pickupEnd.toISOString(),
       });
-      router.back();
+      goBackSafe();
     } catch (e) {
       setError(e instanceof Error ? e.message : '등록에 실패했어요. 다시 시도해주세요.');
     } finally {
@@ -189,7 +191,7 @@ export default function NewListing() {
           ) : null}
 
           <Button title="이웃에게 나눔 알리기" loading={busy} onPress={submit} />
-          <Button title="다음에 할게요" variant="ghost" onPress={() => router.back()} />
+          <Button title="다음에 할게요" variant="ghost" onPress={() => goBackSafe()} />
         </ScrollView>
       </KeyboardAvoidingView>
 

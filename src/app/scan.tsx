@@ -6,10 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { C } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 // QR 스캔 — 가게 화면의 QR({matchId, qrToken})을 읽어 인수 완료 처리
 export default function Scan() {
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const { matchId } = useLocalSearchParams<{ matchId?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [busy, setBusy] = useState(false);
@@ -28,7 +30,7 @@ export default function Scan() {
     } catch (e) {
       Alert.alert('스캔 실패', e instanceof Error ? e.message : '올바른 이음 QR이 아니에요.', [
         { text: '다시 시도', onPress: () => (handled.current = false) },
-        { text: '닫기', onPress: () => router.back() },
+        { text: '닫기', onPress: () => goBackSafe() },
       ]);
     } finally {
       setBusy(false);
@@ -41,7 +43,7 @@ export default function Scan() {
         <Text style={s.title}>카메라 권한이 필요해요</Text>
         <Text style={s.sub}>가게 화면의 QR을 스캔해서 인수를 확인합니다.</Text>
         <Button title="권한 허용" variant="dark" onPress={requestPermission} style={{ alignSelf: 'stretch' }} />
-        <Button title="뒤로" variant="ghost" onPress={() => router.back()} style={{ alignSelf: 'stretch' }} />
+        <Button title="뒤로" variant="ghost" onPress={() => goBackSafe()} style={{ alignSelf: 'stretch' }} />
       </SafeAreaView>
     );
   }
@@ -57,7 +59,7 @@ export default function Scan() {
         <Text style={s.overlayText}>
           {matchId ? `매칭 #${matchId} · ` : ''}가게 화면의 QR을 비춰주세요
         </Text>
-        <Button title="닫기" onPress={() => router.back()} />
+        <Button title="닫기" onPress={() => goBackSafe()} />
       </SafeAreaView>
     </View>
   );

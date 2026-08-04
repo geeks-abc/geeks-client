@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fmtDateTime, fmtTime, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 const STATUS_NOTE: Record<string, string> = {
   OPEN: '주변 복지시설을 찾고 있어요. 신청이 오면 바로 알려드릴게요.',
@@ -20,6 +21,7 @@ const STATUS_NOTE: Record<string, string> = {
 export default function ListingDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const { me } = useAuth();
   const listingId = Number(id);
 
@@ -122,7 +124,7 @@ export default function ListingDetail() {
           </>
         ) : null}
 
-        <Button title="뒤로" variant="ghost" onPress={() => router.back()} />
+        <Button title="뒤로" variant="ghost" onPress={() => goBackSafe()} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { homePath, useAuth } from '@/lib/auth';
 import { C, R } from '@/lib/theme';
+import { useSafeBack } from '@/lib/navigation';
 
 type Step = 'phone' | 'code' | 'profile' | 'done';
 
@@ -28,6 +29,7 @@ const formatPhone = (digits: string) => {
 // 온보딩: 전화번호 → 인증번호 → (신규) 닉네임·유형 → 완료
 export default function PhoneAuth() {
   const router = useRouter();
+  const goBackSafe = useSafeBack();
   const { adoptToken } = useAuth();
 
   const [step, setStep] = useState<Step>('phone');
@@ -106,7 +108,7 @@ export default function PhoneAuth() {
 
   const goBack = () => {
     setError(null);
-    if (step === 'phone') router.back();
+    if (step === 'phone') goBackSafe();
     else if (step === 'code') setStep('phone');
     else if (step === 'profile') setStep('code');
   };
