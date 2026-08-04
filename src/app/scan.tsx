@@ -117,7 +117,7 @@ const s = StyleSheet.create({
   sub: { color: '#AEB7C5', fontSize: 12, fontFamily: 'Pretendard-Regular' },
   scannerBox: { flex: 1, minHeight: 300, borderRadius: 22, overflow: 'hidden', borderWidth: 1, borderColor: '#748195' },
   camera: { flex: 1 },
-  scanGuide: { ...StyleSheet.absoluteFill },
+  scanGuide: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   corner: { position: 'absolute', width: 66, height: 66, borderColor: '#FFD21D' },
   topLeft: { top: 22, left: 22, borderTopWidth: 5, borderLeftWidth: 5, borderTopLeftRadius: 5 },
   topRight: { top: 22, right: 22, borderTopWidth: 5, borderRightWidth: 5, borderTopRightRadius: 5 },
