@@ -161,6 +161,7 @@ export const api = {
       body: { signupToken, nickname, role },
     }),
 
+  store: (id: number) => request<Store>(`/stores/${id}`),
   myListings: (storeId: number) => request<Listing[]>(`/listings?storeId=${storeId}`),
   listing: (id: number) => request<Listing>(`/listings/${id}`),
   createListing: (body: {
@@ -180,7 +181,8 @@ export const api = {
       pickupStart: string;
       pickupEnd: string;
     },
-  ) => request<Listing>(`/listings/${id}`, { method: 'PATCH', body }),  cancelListing: (id: number) => request<Listing>(`/listings/${id}/cancel`, { method: 'POST' }),
+  ) => request<Listing>(`/listings/${id}`, { method: 'PATCH', body }),
+  cancelListing: (id: number) => request<Listing>(`/listings/${id}/cancel`, { method: 'POST' }),
   feed: (facilityId: number, radiusKm = 3) =>
     request<FeedItem[]>(`/listings/feed?facilityId=${facilityId}&radiusKm=${radiusKm}`),
 

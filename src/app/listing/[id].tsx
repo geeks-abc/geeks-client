@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -140,6 +141,22 @@ export default function ListingDetail() {
             </View>
           </View>
 
+          {listing.store ? (
+            <Pressable
+              onPress={() => router.push(`/store-detail/${listing.store!.id}`)}
+              style={({ pressed }) => [s.storeLink, pressed && s.pressed]}
+            >
+              <View style={s.storeAvatar}>
+                <Text style={s.storeAvatarText}>{listing.store.name.slice(0, 1)}</Text>
+              </View>
+              <View style={s.storeLinkInfo}>
+                <Text style={s.storeLinkName}>{listing.store.name}</Text>
+                <Text numberOfLines={1} style={s.storeLinkAddress}>{listing.store.address}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={P.sub} />
+            </Pressable>
+          ) : null}
+
           <View style={[s.statusPill, { backgroundColor: status.bg }]}>
             <Text style={[s.statusText, { color: status.fg }]}>{status.label}</Text>
           </View>
@@ -279,6 +296,12 @@ const s = StyleSheet.create({
   photoFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: P.orange },
   photoFooter: { height: 48, backgroundColor: P.navy, justifyContent: 'center', paddingHorizontal: 16 },
   photoFooterText: { color: P.white, fontSize: 11, lineHeight: 15, fontFamily: 'Pretendard-Bold' },
+  storeLink: { minHeight: 70, marginTop: 16, borderRadius: 18, backgroundColor: P.white, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14 },
+  storeAvatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF0DB' },
+  storeAvatarText: { color: '#E86618', fontSize: 16, fontFamily: 'Pretendard-ExtraBold' },
+  storeLinkInfo: { flex: 1, gap: 2 },
+  storeLinkName: { color: P.navy, fontSize: 14, fontFamily: 'Pretendard-ExtraBold' },
+  storeLinkAddress: { color: P.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
   statusPill: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7, marginTop: 24 },
   statusText: { fontSize: 10, lineHeight: 14, fontFamily: 'Pretendard-Bold' },
   title: { color: P.navy, fontSize: 27, lineHeight: 38, fontFamily: 'Pretendard-Black', marginTop: 16, letterSpacing: -0.7 },
