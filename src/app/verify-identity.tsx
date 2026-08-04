@@ -8,11 +8,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
+import { VerificationCodeInput } from '@/components/verification-code-input';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useSafeBack } from '@/lib/navigation';
@@ -50,12 +50,12 @@ export default function VerifyIdentity() {
     }
   };
 
-  const verifyCode = async () => {
+  const verifyCode = async (submittedCode = code) => {
     if (!me?.phone) return;
     setBusy(true);
     setError(null);
     try {
-      const res = await api.phoneVerify(me.phone, code);
+      const res = await api.phoneVerify(me.phone, submittedCode);
       if (res.accessToken) await adoptToken(res.accessToken);
       markVerified();
       router.replace('/edit-profile');
@@ -95,13 +95,15 @@ export default function VerifyIdentity() {
             </>
           ) : (
             <>
-              <TextInput
-                style={s.codeInput}
+              <VerificationCodeInput
                 value={code}
-                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-                placeholder="······"
-                placeholderTextColor={C.gray}
-                keyboardType="number-pad"
+                onChange={(value) => {
+                  setCode(value);
+                  setError(null);
+                }}
+                onComplete={verifyCode}
+                error={Boolean(error)}
+                disabled={busy}
                 autoFocus
               />
               {demoCode ? (
@@ -112,7 +114,7 @@ export default function VerifyIdentity() {
                 </View>
               ) : null}
               {error ? <Text style={s.errorText}>{error}</Text> : null}
-              <Button title="확인" loading={busy} disabled={code.length !== 6} onPress={verifyCode} />
+              {busy ? <Text style={s.verifyingText}>인증번호를 확인하고 있어요.</Text> : null}
               <Pressable onPress={sendCode} hitSlop={8}>
                 <Text style={s.resend}>인증번호 다시 받기</Text>
               </Pressable>
@@ -141,16 +143,7 @@ const s = StyleSheet.create({
     lineHeight: 35,
   },
   sub: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: -8 },
-  codeInput: {
-    fontSize: 22,
-    fontFamily: 'Pretendard-Bold',
-    color: C.text,
-    borderBottomWidth: 2,
-    borderBottomColor: C.line,
-    paddingVertical: 12,
-    letterSpacing: 12,
-    textAlign: 'center',
-  },
+  verifyingText: { color: C.brandDeep, fontSize: 12.5, fontFamily: 'Pretendard-SemiBold', textAlign: 'center' },
   demoHint: {
     backgroundColor: C.brandSoft,
     borderRadius: 12,

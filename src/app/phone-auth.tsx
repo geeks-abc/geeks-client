@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { PostcodeModal } from '@/components/postcode-search';
 import { Button } from '@/components/ui';
+import { VerificationCodeInput } from '@/components/verification-code-input';
 import { api } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { homePath, useAuth } from '@/lib/auth';
@@ -59,7 +60,6 @@ export default function PhoneAuth() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [welcome, setWelcome] = useState({ title: '', sub: '' });
-  const codeInputRef = useRef<TextInput>(null);
 
   const fail = (e: unknown) =>
     setError(e instanceof Error ? e.message : '잠시 후 다시 시도해주세요.');
@@ -72,7 +72,6 @@ export default function PhoneAuth() {
       setDemoCode(res.demoCode);
       setCode('');
       setStep('code');
-      setTimeout(() => codeInputRef.current?.focus(), 350);
     } catch (e) {
       fail(e);
     } finally {
@@ -91,11 +90,11 @@ export default function PhoneAuth() {
     setTimeout(() => router.replace(homePath(profile.role)), 1300);
   };
 
-  const verify = async () => {
+  const verify = async (submittedCode = code) => {
     setBusy(true);
     setError(null);
     try {
-      const res = await api.phoneVerify(phone, code);
+      const res = await api.phoneVerify(phone, submittedCode);
       if (!res.isNew && res.accessToken) {
         await finish(res.accessToken, false);
       } else if (res.signupToken) {
@@ -211,14 +210,16 @@ export default function PhoneAuth() {
                 <Text style={s.title}>인증번호 6자리를{'\n'}입력해주세요</Text>
                 <Text style={s.sub}>{formatPhone(phone)}로 보냈어요.</Text>
               </View>
-              <TextInput
-                ref={codeInputRef}
-                style={[s.bigInput, s.codeInput]}
+              <VerificationCodeInput
                 value={code}
-                onChangeText={(t) => setCode(t.replace(/[^0-9]/g, '').slice(0, 6))}
-                placeholder="······"
-                placeholderTextColor={C.gray}
-                keyboardType="number-pad"
+                onChange={(value) => {
+                  setCode(value);
+                  setError(null);
+                }}
+                onComplete={verify}
+                error={Boolean(error)}
+                disabled={busy}
+                autoFocus
               />
               {demoCode ? (
                 <View style={s.demoHint}>
@@ -228,7 +229,7 @@ export default function PhoneAuth() {
                 </View>
               ) : null}
               {error ? <Text style={s.errorText}>{error}</Text> : null}
-              <Button title="확인" loading={busy} disabled={code.length !== 6} onPress={verify} />
+              {busy ? <Text style={s.verifyingText}>인증번호를 확인하고 있어요.</Text> : null}
               <Pressable onPress={requestCode} hitSlop={8}>
                 <Text style={s.resend}>인증번호 다시 받기</Text>
               </Pressable>
@@ -458,7 +459,7 @@ const s = StyleSheet.create({
     borderBottomColor: C.line,
     paddingVertical: 12,
   },
-  codeInput: { letterSpacing: 12, textAlign: 'center' },
+  verifyingText: { color: C.brandDeep, fontSize: 12.5, fontFamily: 'Pretendard-SemiBold', textAlign: 'center' },
   demoHint: {
     backgroundColor: C.brandSoft,
     borderRadius: 12,

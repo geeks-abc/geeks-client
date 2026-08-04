@@ -43,10 +43,10 @@ export function VerificationCodeInput({
   const completedValue = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!autoFocus) return;
+    if (!autoFocus || disabled) return;
     const timer = setTimeout(() => inputRef.current?.focus(), 280);
     return () => clearTimeout(timer);
-  }, [autoFocus]);
+  }, [autoFocus, disabled]);
 
   useEffect(() => {
     if (value.length < length) {
