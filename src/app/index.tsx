@@ -2,7 +2,6 @@ import { Redirect, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Image,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import { BottomSheet } from '@/components/bottom-sheet';
 import { Button } from '@/components/ui';
 import { Role } from '@/lib/api';
 import { DEMO_ACCOUNTS, homePath, useAuth } from '@/lib/auth';
@@ -95,36 +95,30 @@ export default function Landing() {
       </ScrollView>
 
       {/* 디버그: 데모 계정 빠른 전환 */}
-      <Modal
+      <BottomSheet
         visible={debugOpen}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setDebugOpen(false)}
+        onClose={() => setDebugOpen(false)}
+        sheetStyle={s.sheet}
       >
-        <Pressable style={s.backdrop} onPress={() => setDebugOpen(false)}>
-          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
-            <View style={s.handle} />
-            <Text style={s.sheetTitle}>개발자 모드</Text>
-            <Text style={s.sheetSub}>시딩된 데모 계정으로 바로 전환합니다.</Text>
-            <View style={{ gap: 10, marginTop: 16 }}>
-              {DEMO_ACCOUNTS.map((account) => (
-                <Pressable
-                  key={account.role}
-                  onPress={() => enterDemo(account.role)}
-                  style={({ pressed }) => [s.demoRow, pressed && { opacity: 0.7 }]}
-                >
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={s.demoLabel}>{account.label}</Text>
-                    <Text style={s.demoName}>{account.sub}</Text>
-                  </View>
-                  <Text style={s.demoGo}>{busy === account.role ? '전환 중…' : '전환 →'}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {error ? <Text style={s.errorText}>{error}</Text> : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Text style={s.sheetTitle}>개발자 모드</Text>
+        <Text style={s.sheetSub}>시딩된 데모 계정으로 바로 전환합니다.</Text>
+        <View style={{ gap: 10, marginTop: 16 }}>
+          {DEMO_ACCOUNTS.map((account) => (
+            <Pressable
+              key={account.role}
+              onPress={() => enterDemo(account.role)}
+              style={({ pressed }) => [s.demoRow, pressed && { opacity: 0.7 }]}
+            >
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={s.demoLabel}>{account.label}</Text>
+                <Text style={s.demoName}>{account.sub}</Text>
+              </View>
+              <Text style={s.demoGo}>{busy === account.role ? '전환 중…' : '전환 →'}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {error ? <Text style={s.errorText}>{error}</Text> : null}
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -165,21 +159,12 @@ const s = StyleSheet.create({
   featureSub: { fontSize: 12.5, fontFamily: 'Pretendard-Regular', color: C.sub },
   devButton: { alignSelf: 'center', paddingVertical: 12 },
   devButtonText: { fontSize: 12, fontFamily: 'Pretendard-SemiBold', color: C.gray },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: C.bg,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 44,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.gray,
-    marginBottom: 16,
   },
   sheetTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   sheetSub: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: 4 },

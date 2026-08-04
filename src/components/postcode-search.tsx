@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BottomSheet } from '@/components/bottom-sheet';
 import { C } from '@/lib/theme';
 
 export interface PostcodeResult {
@@ -22,24 +22,19 @@ export function PostcodeModal({
   onClose: () => void;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Animated.View entering={FadeIn.duration(180)} style={s.backdrop}>
-        <Pressable style={{ flex: 1 }} onPress={onClose} />
-        <Animated.View entering={SlideInDown.duration(280)} style={s.sheet}>
-          <View style={s.header}>
-            <Text style={s.title}>주소 검색</Text>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={22} color={C.text} />
-            </Pressable>
-          </View>
-          {Platform.OS === 'web' ? (
-            <WebPostcode onSelect={onSelect} />
-          ) : (
-            <NativePostcode onSelect={onSelect} />
-          )}
-        </Animated.View>
-      </Animated.View>
-    </Modal>
+    <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet} showHandle={false}>
+      <View style={s.header}>
+        <Text style={s.title}>주소 검색</Text>
+        <Pressable onPress={onClose} hitSlop={10}>
+          <Ionicons name="close" size={22} color={C.text} />
+        </Pressable>
+      </View>
+      {Platform.OS === 'web' ? (
+        <WebPostcode onSelect={onSelect} />
+      ) : (
+        <NativePostcode onSelect={onSelect} />
+      )}
+    </BottomSheet>
   );
 }
 
@@ -118,7 +113,6 @@ function NativePostcode({ onSelect }: { onSelect: (r: PostcodeResult) => void })
 }
 
 const s = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     height: '78%',
     backgroundColor: '#FFFFFF',

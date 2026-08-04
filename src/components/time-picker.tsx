@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { BottomSheet } from '@/components/bottom-sheet';
 import { C, R } from '@/lib/theme';
 
 // ── 5분 단위 슬롯 알고리즘 ──────────────────────────────
@@ -46,38 +47,32 @@ export function TimeSlotModal({
   onClose: () => void;
 }) {
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={s.backdrop} onPress={onClose}>
-        <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={s.handle} />
-          <Text style={s.title}>{title}</Text>
-          <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={s.grid}>
-            {slots.map((slot) => {
-              const isSelected = selected?.getTime() === slot.getTime();
-              return (
-                <Pressable
-                  key={slot.getTime()}
-                  onPress={() => {
-                    onSelect(slot);
-                    onClose();
-                  }}
-                  style={[s.chip, isSelected && s.chipSelected]}
-                >
-                  <Text style={[s.chipText, isSelected && s.chipTextSelected]}>
-                    {slotLabel(slot)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
+    <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet}>
+      <Text style={s.title}>{title}</Text>
+      <ScrollView style={{ maxHeight: 320 }} contentContainerStyle={s.grid}>
+        {slots.map((slot) => {
+          const isSelected = selected?.getTime() === slot.getTime();
+          return (
+            <Pressable
+              key={slot.getTime()}
+              onPress={() => {
+                onSelect(slot);
+                onClose();
+              }}
+              style={[s.chip, isSelected && s.chipSelected]}
+            >
+              <Text style={[s.chipText, isSelected && s.chipTextSelected]}>
+                {slotLabel(slot)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
 const s = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: C.bg,
     borderTopLeftRadius: 24,
@@ -85,13 +80,6 @@ const s = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
     gap: 16,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.gray,
   },
   title: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 8 },

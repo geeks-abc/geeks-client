@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { BottomSheet } from '@/components/bottom-sheet';
 import { SLOT_MINUTES, nextSlotAfter } from '@/components/time-picker';
 import { C } from '@/lib/theme';
 
@@ -83,70 +83,55 @@ export function DateTimePickerModal({
   }, [day, lowerBound]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Animated.View entering={FadeIn.duration(160)} style={s.backdropWrap}>
-      <Pressable style={s.backdrop} onPress={onClose}>
-        <AnimatedSheet>
-        <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={s.handle} />
-          <Text style={s.title}>{title}</Text>
+    <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet}>
+      <Text style={s.title}>{title}</Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.dayRow}
-          >
-            {days.map((d) => {
-              const active = d.getTime() === startOfDay(day).getTime();
-              return (
-                <Pressable
-                  key={d.getTime()}
-                  onPress={() => setDay(d)}
-                  style={[s.dayChip, active && s.dayChipActive]}
-                >
-                  <Text style={[s.dayChipText, active && s.dayChipTextActive]}>
-                    {dayLabel(d)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={s.dayRow}
+      >
+        {days.map((d) => {
+          const active = d.getTime() === startOfDay(day).getTime();
+          return (
+            <Pressable
+              key={d.getTime()}
+              onPress={() => setDay(d)}
+              style={[s.dayChip, active && s.dayChipActive]}
+            >
+              <Text style={[s.dayChipText, active && s.dayChipTextActive]}>
+                {dayLabel(d)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
-          <ScrollView style={{ maxHeight: 300 }} contentContainerStyle={s.grid}>
-            {slots.map((slot) => {
-              const active = selected?.getTime() === slot.getTime();
-              return (
-                <Pressable
-                  key={slot.getTime()}
-                  onPress={() => {
-                    onSelect(slot);
-                    onClose();
-                  }}
-                  style={[s.chip, active && s.chipActive]}
-                >
-                  <Text style={[s.chipText, active && s.chipTextActive]}>{hhmm(slot)}</Text>
-                </Pressable>
-              );
-            })}
-            {slots.length === 0 ? (
-              <Text style={s.emptyText}>선택 가능한 시간이 없어요. 다른 날짜를 선택해주세요.</Text>
-            ) : null}
-          </ScrollView>
-        </Pressable>
-        </AnimatedSheet>
-      </Pressable>
-      </Animated.View>
-    </Modal>
+      <ScrollView style={{ maxHeight: 300 }} contentContainerStyle={s.grid}>
+        {slots.map((slot) => {
+          const active = selected?.getTime() === slot.getTime();
+          return (
+            <Pressable
+              key={slot.getTime()}
+              onPress={() => {
+                onSelect(slot);
+                onClose();
+              }}
+              style={[s.chip, active && s.chipActive]}
+            >
+              <Text style={[s.chipText, active && s.chipTextActive]}>{hhmm(slot)}</Text>
+            </Pressable>
+          );
+        })}
+        {slots.length === 0 ? (
+          <Text style={s.emptyText}>선택 가능한 시간이 없어요. 다른 날짜를 선택해주세요.</Text>
+        ) : null}
+      </ScrollView>
+    </BottomSheet>
   );
 }
 
-function AnimatedSheet({ children }: { children: React.ReactNode }) {
-  return <Animated.View entering={SlideInDown.duration(280)}>{children}</Animated.View>;
-}
-
 const s = StyleSheet.create({
-  backdropWrap: { flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: '#F9F9F5',
     borderTopLeftRadius: 24,
@@ -154,13 +139,6 @@ const s = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
     gap: 16,
-  },
-  handle: {
-    alignSelf: 'center',
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: C.gray,
   },
   title: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   dayRow: { gap: 8, paddingBottom: 4 },
