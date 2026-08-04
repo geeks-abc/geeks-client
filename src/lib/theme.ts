@@ -2,10 +2,11 @@
 export const C = {
   bg: '#F4F6F5',
   card: '#FFFFFF',
-  brand: '#10B26C', // 메인 그린
-  brandSoft: '#E3F6ED', // 연한 그린 배경
-  brandDeep: '#0B7A49', // soft 배경 위 텍스트
-  brandOnDark: '#5CE0A1', // 어두운 배경 위 그린 포인트
+  brand: '#3C7A52', // 메인 그린 (로고 딥그린 계열)
+  brandSoft: '#E9F1EB', // 연한 그린 배경
+  brandDeep: '#2C5E3F', // soft 배경 위 텍스트
+  brandOnDark: '#8FCBA5', // 어두운 배경 위 그린 포인트
+  accent: '#F0A24C', // 로고 오렌지 포인트
   navy: '#131A2E',
   text: '#191F28',
   sub: '#8B95A1',

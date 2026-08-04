@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -42,7 +43,7 @@ export default function Login() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -53,9 +54,11 @@ export default function Login() {
           bounces={false}
         >
           <Animated.View entering={FadeInDown.duration(500)} style={s.brandArea}>
-            <View style={s.logoMark}>
-              <Text style={s.logoMarkText}>이음</Text>
-            </View>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={s.logo}
+              resizeMode="contain"
+            />
             <Text style={s.headline}>
               버려질 음식이{'\n'}필요한 곳에 <Text style={{ color: C.brand }}>닿도록</Text>
             </Text>
@@ -139,17 +142,9 @@ export default function Login() {
 }
 
 const s = StyleSheet.create({
-  container: { flexGrow: 1, padding: 24, paddingTop: 40 },
-  brandArea: { gap: 14 },
-  logoMark: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: C.brand,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoMarkText: { color: '#FFF', fontSize: 15, fontFamily: 'Pretendard-Black' },
+  container: { flexGrow: 1, padding: 24, paddingTop: 32 },
+  brandArea: { gap: 12 },
+  logo: { width: 168, height: 84, marginLeft: -14 },
   headline: {
     fontSize: 30,
     fontFamily: 'Pretendard-Black',
