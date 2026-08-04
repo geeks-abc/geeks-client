@@ -5,7 +5,7 @@ import { C } from '@/lib/theme';
 
 function Label({ focused, title }: { focused: boolean; title: string }) {
   return (
-    <Text style={{ fontSize: 12, fontWeight: focused ? '800' : '600', color: focused ? C.text : C.gray }}>
+    <Text style={{ fontSize: 12, fontFamily: focused ? 'Pretendard-ExtraBold' : 'Pretendard-SemiBold', color: focused ? C.text : C.gray }}>
       {title}
     </Text>
   );

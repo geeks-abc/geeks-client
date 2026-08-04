@@ -54,12 +54,12 @@ export default function CertificateScreen() {
 }
 
 const s = StyleSheet.create({
-  logo: { fontSize: 13, fontWeight: '900', color: C.navy, letterSpacing: 1 },
-  title: { fontSize: 28, fontWeight: '900', color: C.navy },
-  sub: { fontSize: 14, color: '#6B6300', fontWeight: '600', marginTop: -10 },
+  logo: { fontSize: 13, fontFamily: 'Pretendard-Black', color: C.navy, letterSpacing: 1 },
+  title: { fontSize: 28, fontFamily: 'Pretendard-Black', color: C.navy },
+  sub: { fontSize: 14, color: '#6B6300', fontFamily: 'Pretendard-SemiBold', marginTop: -10 },
   paper: { backgroundColor: '#FFF', borderRadius: R.card, padding: 24, gap: 2 },
-  paperTitle: { fontSize: 20, fontWeight: '900', color: C.text, textAlign: 'center' },
-  serial: { fontSize: 11, color: C.sub, textAlign: 'center', marginTop: 6 },
+  paperTitle: { fontSize: 20, fontFamily: 'Pretendard-Black', color: C.text, textAlign: 'center' },
+  serial: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: C.sub, textAlign: 'center', marginTop: 6 },
   divider: { height: 1, backgroundColor: C.line, marginVertical: 14 },
   stamp: {
     alignSelf: 'flex-end',
@@ -72,5 +72,5 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 10,
   },
-  stampText: { color: C.red, fontWeight: '800' },
+  stampText: { color: C.red, fontFamily: 'Pretendard-ExtraBold' },
 });

@@ -56,8 +56,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 16,
   },
-  logo: { fontSize: 22, fontWeight: '900', color: C.text },
-  subtitle: { fontSize: 11, fontWeight: '700', color: C.sub, letterSpacing: 1.2, marginTop: 2 },
+  logo: { fontSize: 22, fontFamily: 'Pretendard-Black', color: C.text },
+  subtitle: { fontSize: 11, fontFamily: 'Pretendard-Bold', color: C.sub, letterSpacing: 1.2, marginTop: 2 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -69,7 +69,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: C.line,
   },
-  chipText: { fontSize: 13, fontWeight: '700', color: C.text },
+  chipText: { fontSize: 13, fontFamily: 'Pretendard-Bold', color: C.text },
   dot: {
     minWidth: 18,
     height: 18,
@@ -79,5 +79,5 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  dotText: { color: '#FFF', fontSize: 11, fontWeight: '800' },
+  dotText: { color: '#FFF', fontSize: 11, fontFamily: 'Pretendard-ExtraBold' },
 });

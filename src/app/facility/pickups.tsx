@@ -53,7 +53,7 @@ export default function Pickups() {
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  store: { fontSize: 12, color: C.sub, fontWeight: '600' },
-  item: { fontSize: 16, fontWeight: '800', color: C.text },
-  meta: { fontSize: 12, color: C.sub },
+  store: { fontSize: 12, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
+  item: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  meta: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.sub },
 });

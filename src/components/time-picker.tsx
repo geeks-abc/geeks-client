@@ -2,18 +2,23 @@ import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { C, R } from '@/lib/theme';
 
-// ── 30분 단위 슬롯 알고리즘 ──────────────────────────────
-// 화면 진입 시점 기준, 현재 시각 "다음" 30분 경계부터 시작.
-// 예) 14:12 → 14:30, 14:30 정각 → 15:00 (항상 다음 타임)
+// ── 5분 단위 슬롯 알고리즘 ──────────────────────────────
+// 화면 진입 시점 기준, 현재 시각 "다음" 5분 경계부터 시작.
+// 예) 14:12 → 14:15, 14:15 정각 → 14:20 (항상 다음 타임)
+export const SLOT_MINUTES = 5;
+
 export function nextSlotAfter(from: Date): Date {
   const d = new Date(from);
   d.setSeconds(0, 0);
-  d.setMinutes(Math.floor(d.getMinutes() / 30) * 30 + 30);
+  d.setMinutes(Math.floor(d.getMinutes() / SLOT_MINUTES) * SLOT_MINUTES + SLOT_MINUTES);
   return d;
 }
 
 export function buildSlots(start: Date, count: number): Date[] {
-  return Array.from({ length: count }, (_, i) => new Date(start.getTime() + i * 30 * 60000));
+  return Array.from(
+    { length: count },
+    (_, i) => new Date(start.getTime() + i * SLOT_MINUTES * 60000),
+  );
 }
 
 export const slotLabel = (d: Date) => {
@@ -88,7 +93,7 @@ const s = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: C.gray,
   },
-  title: { fontSize: 18, fontWeight: '800', color: C.text },
+  title: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 8 },
   chip: {
     width: '30.5%',
@@ -100,6 +105,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   chipSelected: { backgroundColor: C.navy, borderColor: C.navy },
-  chipText: { fontSize: 14, fontWeight: '700', color: C.text },
+  chipText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.text },
   chipTextSelected: { color: C.yellow },
 });

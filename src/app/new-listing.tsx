@@ -31,9 +31,9 @@ export default function NewListing() {
   const router = useRouter();
   const { me } = useAuth();
 
-  // 화면 진입 시각 기준으로 슬롯 고정 (현재 시각 다음 30분 경계부터)
+  // 화면 진입 시각 기준으로 슬롯 고정 (현재 시각 다음 5분 경계부터, 6시간 범위)
   const firstSlot = useMemo(() => nextSlotAfter(new Date()), []);
-  const startSlots = useMemo(() => buildSlots(firstSlot, 16), [firstSlot]); // 8시간 범위
+  const startSlots = useMemo(() => buildSlots(firstSlot, 72), [firstSlot]);
 
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -46,9 +46,9 @@ export default function NewListing() {
   const [error, setError] = useState<string | null>(null);
   const [picker, setPicker] = useState<'start' | 'end' | null>(null);
 
-  // 종료 슬롯은 항상 시작 이후 30분부터 (6시간 범위)
+  // 종료 슬롯은 항상 시작 이후 5분부터 (6시간 범위)
   const endSlots = useMemo(
-    () => buildSlots(new Date(pickupStart.getTime() + 30 * 60000), 12),
+    () => buildSlots(new Date(pickupStart.getTime() + 5 * 60000), 72),
     [pickupStart],
   );
 
@@ -219,7 +219,7 @@ function TextInputBox(props: TextInputProps) {
 }
 
 const s = StyleSheet.create({
-  eyebrow: { fontSize: 13, fontWeight: '800', color: '#B4950A' },
+  eyebrow: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: '#B4950A' },
   photoBox: {
     height: 180,
     borderRadius: R.card,
@@ -238,10 +238,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  photoEditText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
-  photoText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
-  photoRemove: { color: C.sub, fontSize: 12, textAlign: 'right', marginTop: -10 },
-  label: { fontSize: 13, color: C.sub, fontWeight: '600' },
+  photoEditText: { color: '#FFF', fontSize: 12, fontFamily: 'Pretendard-Bold' },
+  photoText: { color: '#FFF', fontFamily: 'Pretendard-Bold', fontSize: 13 },
+  photoRemove: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular', textAlign: 'right', marginTop: -10 },
+  label: { fontSize: 13, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
   inputWrap: {},
   input: {
     backgroundColor: C.card,
@@ -250,7 +250,7 @@ const s = StyleSheet.create({
     borderColor: C.line,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 16, fontFamily: 'Pretendard-Regular',
     color: C.text,
   },
   timeButton: {
@@ -264,12 +264,12 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  timeText: { fontSize: 16, fontWeight: '700', color: C.text },
-  timeCaret: { color: C.sub, fontSize: 12 },
+  timeText: { fontSize: 16, fontFamily: 'Pretendard-Bold', color: C.text },
+  timeCaret: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular' },
   errorBox: {
     backgroundColor: C.redSoft,
     borderRadius: R.chip,
     padding: 14,
   },
-  errorText: { color: C.red, fontSize: 13, fontWeight: '600' },
+  errorText: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
 });

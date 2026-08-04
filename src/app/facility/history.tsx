@@ -49,8 +49,8 @@ export default function FacilityHistory() {
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  store: { fontSize: 12, color: C.sub, fontWeight: '600' },
-  item: { fontSize: 16, fontWeight: '800', color: C.text },
-  meta: { fontSize: 13, color: C.sub },
-  date: { fontSize: 11, color: C.gray, maxWidth: 90, textAlign: 'right' },
+  store: { fontSize: 12, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
+  item: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  meta: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub },
+  date: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: C.gray, maxWidth: 90, textAlign: 'right' },
 });

@@ -65,8 +65,8 @@ export default function Scan() {
 
 const s = StyleSheet.create({
   center: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', padding: 32, gap: 14 },
-  title: { fontSize: 20, fontWeight: '800', color: C.text, textAlign: 'center' },
-  sub: { fontSize: 13, color: C.sub, textAlign: 'center', marginBottom: 10 },
+  title: { fontSize: 20, fontFamily: 'Pretendard-ExtraBold', color: C.text, textAlign: 'center' },
+  sub: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub, textAlign: 'center', marginBottom: 10 },
   overlay: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 24, gap: 12 },
-  overlayText: { color: '#FFF', textAlign: 'center', fontWeight: '700' },
+  overlayText: { color: '#FFF', textAlign: 'center', fontFamily: 'Pretendard-Bold' },
 });

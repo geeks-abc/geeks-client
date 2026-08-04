@@ -75,10 +75,10 @@ export default function StoreMatchDetail() {
 
 const s = StyleSheet.create({
   hero: { backgroundColor: C.navy, borderRadius: 24, padding: 24, gap: 10 },
-  heroLogo: { color: C.yellow, fontWeight: '900', fontSize: 16 },
-  heroTitle: { color: '#FFF', fontSize: 22, fontWeight: '900' },
-  heroSub: { color: '#AAB4C8', fontSize: 14, fontWeight: '600' },
-  itemName: { fontSize: 18, fontWeight: '800', color: C.text, marginBottom: 8 },
-  qrTitle: { fontSize: 18, fontWeight: '800', color: C.text },
-  qrHint: { fontSize: 12, color: C.sub, marginTop: 16 },
+  heroLogo: { color: C.yellow, fontFamily: 'Pretendard-Black', fontSize: 16 },
+  heroTitle: { color: '#FFF', fontSize: 22, fontFamily: 'Pretendard-Black' },
+  heroSub: { color: '#AAB4C8', fontSize: 14, fontFamily: 'Pretendard-SemiBold' },
+  itemName: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text, marginBottom: 8 },
+  qrTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  qrHint: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: 16 },
 });

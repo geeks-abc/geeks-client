@@ -51,8 +51,8 @@ export default function StoreHistory() {
 
 const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  item: { fontSize: 16, fontWeight: '800', color: C.text },
-  meta: { fontSize: 13, color: C.sub },
-  date: { fontSize: 12, color: C.gray },
-  link: { fontSize: 13, fontWeight: '800', color: '#B4950A' },
+  item: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  meta: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub },
+  date: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.gray },
+  link: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: '#B4950A' },
 });

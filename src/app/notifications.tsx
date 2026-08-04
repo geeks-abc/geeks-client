@@ -69,7 +69,7 @@ export default function Notifications() {
 }
 
 const s = StyleSheet.create({
-  type: { fontSize: 13, fontWeight: '800', color: C.text },
-  date: { fontSize: 11, color: C.gray },
-  body: { fontSize: 14, color: C.sub },
+  type: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  date: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: C.gray },
+  body: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: C.sub },
 });

@@ -109,7 +109,7 @@ const s = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: 16,
   },
-  photoLabel: { color: '#FFF', fontWeight: '800', fontSize: 14 },
+  photoLabel: { color: '#FFF', fontFamily: 'Pretendard-ExtraBold', fontSize: 14 },
   confirmChip: {
     alignSelf: 'flex-start',
     backgroundColor: C.greenSoft,
@@ -117,7 +117,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
-  confirmChipText: { fontSize: 11, fontWeight: '900', color: C.green, letterSpacing: 0.5 },
-  storeName: { fontSize: 24, fontWeight: '900', color: C.text },
-  storeMeta: { fontSize: 14, color: C.sub, marginTop: -8 },
+  confirmChipText: { fontSize: 11, fontFamily: 'Pretendard-Black', color: C.green, letterSpacing: 0.5 },
+  storeName: { fontSize: 24, fontFamily: 'Pretendard-Black', color: C.text },
+  storeMeta: { fontSize: 14, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: -8 },
 });

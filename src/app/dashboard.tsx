@@ -65,12 +65,12 @@ export default function Dashboard() {
 }
 
 const s = StyleSheet.create({
-  headline: { fontSize: 26, fontWeight: '900', color: '#FFF' },
-  sub: { fontSize: 12, color: '#8D97AC', marginTop: -8 },
+  headline: { fontSize: 26, fontFamily: 'Pretendard-Black', color: '#FFF' },
+  sub: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: '#8D97AC', marginTop: -8 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   tile: { width: '47.5%', borderRadius: R.card, padding: 18, gap: 6, flexGrow: 1 },
-  tileLabel: { fontSize: 12, fontWeight: '700', opacity: 0.7 },
-  tileValue: { fontSize: 26, fontWeight: '900' },
+  tileLabel: { fontSize: 12, fontFamily: 'Pretendard-Bold', opacity: 0.7 },
+  tileValue: { fontSize: 26, fontFamily: 'Pretendard-Black' },
   chart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -80,6 +80,6 @@ const s = StyleSheet.create({
   },
   barWrap: { alignItems: 'center', gap: 6, flex: 1 },
   bar: { width: 18, borderRadius: 9, backgroundColor: C.yellow },
-  barValue: { fontSize: 11, fontWeight: '800', color: C.text },
-  barLabel: { fontSize: 10, color: C.sub },
+  barValue: { fontSize: 11, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  barLabel: { fontSize: 10, fontFamily: 'Pretendard-Regular', color: C.sub },
 });

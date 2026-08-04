@@ -102,9 +102,9 @@ export default function Login() {
 
 const s = StyleSheet.create({
   hero: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 },
-  logo: { fontSize: 20, fontWeight: '900', color: C.navy },
-  heroTitle: { fontSize: 30, fontWeight: '900', color: C.navy, lineHeight: 40, marginTop: 24 },
-  heroSub: { fontSize: 14, color: '#6B6300', marginTop: 10, fontWeight: '600' },
+  logo: { fontSize: 20, fontFamily: 'Pretendard-Black', color: C.navy },
+  heroTitle: { fontSize: 30, fontFamily: 'Pretendard-Black', color: C.navy, lineHeight: 40, marginTop: 24 },
+  heroSub: { fontSize: 14, color: '#6B6300', marginTop: 10, fontFamily: 'Pretendard-SemiBold' },
   sheet: {
     flex: 1,
     backgroundColor: C.bg,
@@ -113,18 +113,18 @@ const s = StyleSheet.create({
     padding: 24,
     paddingBottom: 48,
   },
-  sheetTitle: { fontSize: 22, fontWeight: '800', color: C.text },
-  sheetSub: { fontSize: 13, color: C.sub, marginTop: 6 },
+  sheetTitle: { fontSize: 22, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  sheetSub: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: 6 },
   switcherTitle: {
     fontSize: 11,
-    fontWeight: '800',
+    fontFamily: 'Pretendard-ExtraBold',
     letterSpacing: 1.2,
     color: C.sub,
     marginTop: 32,
     marginBottom: 12,
   },
   switchCard: { borderRadius: R.card, padding: 18, gap: 2 },
-  switchLabel: { fontSize: 12, fontWeight: '800', color: '#6B6300' },
-  switchName: { fontSize: 17, fontWeight: '800', color: C.text },
-  switchGo: { fontSize: 12, fontWeight: '600', color: '#6B7684', marginTop: 6 },
+  switchLabel: { fontSize: 12, fontFamily: 'Pretendard-ExtraBold', color: '#6B6300' },
+  switchName: { fontSize: 17, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  switchGo: { fontSize: 12, fontFamily: 'Pretendard-SemiBold', color: '#6B7684', marginTop: 6 },
 });
