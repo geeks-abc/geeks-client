@@ -1,4 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { Platform } from 'react-native';
 import { API_BASE } from './config';
 
 let authToken: string | null = null;
@@ -198,8 +199,26 @@ export const api = {
       { method: 'PATCH' },
     ),
 
-  // RN fetch+FormData는 파일이 누락되는 케이스가 있어 FileSystem.uploadAsync 사용
+  // 네이티브: FileSystem.uploadAsync (RN fetch+FormData는 파일 누락 이슈)
+  // 웹: blob → 표준 FormData (uploadAsync가 웹 미지원)
   upload: async (uri: string): Promise<{ url: string }> => {
+    if (Platform.OS === 'web') {
+      const blob = await (await fetch(uri)).blob();
+      const ext = blob.type.includes('/') ? blob.type.split('/')[1] : 'jpg';
+      const form = new FormData();
+      form.append('file', blob, `photo.${ext === 'jpeg' ? 'jpg' : ext}`);
+      const res = await fetch(`${API_BASE}/api/uploads`, {
+        method: 'POST',
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+        body: form,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new ApiError(res.status, data?.message ?? `업로드 실패 (${res.status})`);
+      }
+      return data as { url: string };
+    }
+
     const result = await FileSystem.uploadAsync(`${API_BASE}/api/uploads`, uri, {
       httpMethod: 'POST',
       uploadType: FileSystem.FileSystemUploadType.MULTIPART,
