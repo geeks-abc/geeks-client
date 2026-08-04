@@ -171,7 +171,16 @@ export const api = {
     pickupStart: string;
     pickupEnd: string;
   }) => request<Listing>('/listings', { method: 'POST', body }),
-  cancelListing: (id: number) => request<Listing>(`/listings/${id}/cancel`, { method: 'POST' }),
+  updateListing: (
+    id: number,
+    body: {
+      itemName: string;
+      quantity: number;
+      photoUrl?: string;
+      pickupStart: string;
+      pickupEnd: string;
+    },
+  ) => request<Listing>(`/listings/${id}`, { method: 'PATCH', body }),  cancelListing: (id: number) => request<Listing>(`/listings/${id}/cancel`, { method: 'POST' }),
   feed: (facilityId: number, radiusKm = 3) =>
     request<FeedItem[]>(`/listings/feed?facilityId=${facilityId}&radiusKm=${radiusKm}`),
 

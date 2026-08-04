@@ -1,24 +1,28 @@
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C } from '@/lib/theme';
 
 export interface TabMeta {
-  icon: keyof typeof Ionicons.glyphMap; // 채워진 아이콘 이름 (outline은 자동)
+  icon?: string;
   label: string;
 }
 
-// expo-router Tabs가 넘겨주는 tabBar props 중 사용하는 부분만 정의
 interface TabBarProps {
   state: { index: number; routes: { key: string; name: string }[] };
-  // react-navigation의 복잡한 제네릭 시그니처 대신 필요한 메서드만 사용
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // react-navigation tab bar props 중 필요한 부분만 사용합니다.
   navigation: any;
   tabs: Record<string, TabMeta>;
 }
 
-// 커스텀 탭바 — 아이콘 + 활성 탭 그린 필 하이라이트
+const NAVY = '#051224';
+const SUB = '#8A8F96';
+const YELLOW = '#FFCF14';
+const LINE = '#E0E3E0';
+
+/**
+ * 최종 Figma 시안의 하단 내비게이션.
+ * 아이콘 대신 텍스트와 활성 상태 점만 사용합니다.
+ */
 export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
   const insets = useSafeAreaInsets();
 
@@ -32,26 +36,23 @@ export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
         return (
           <Pressable
             key={route.key}
+            accessibilityRole="button"
+            accessibilityState={active ? { selected: true } : {}}
             onPress={() => {
               const event = navigation.emit({
                 type: 'tabPress',
                 target: route.key,
                 canPreventDefault: true,
               });
+
               if (!active && !event.defaultPrevented) {
                 navigation.navigate(route.name);
               }
             }}
-            style={({ pressed }) => [s.tab, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [s.tab, pressed && s.pressed]}
           >
-            <View style={[s.iconPill, active && s.iconPillActive]}>
-              <Ionicons
-                name={active ? meta.icon : (`${meta.icon}-outline` as TabMeta['icon'])}
-                size={21}
-                color={active ? C.brandDeep : C.gray}
-              />
-            </View>
             <Text style={[s.label, active && s.labelActive]}>{meta.label}</Text>
+            <View style={[s.dot, !active && s.dotHidden]} />
           </Pressable>
         );
       })}
@@ -61,25 +62,41 @@ export function AppTabBar({ state, navigation, tabs }: TabBarProps) {
 
 const s = StyleSheet.create({
   bar: {
+    minHeight: 70,
     flexDirection: 'row',
-    backgroundColor: C.card,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 10,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 12,
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: LINE,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    paddingTop: 17,
+    paddingHorizontal: 0,
+    overflow: 'hidden',
   },
-  tab: { flex: 1, alignItems: 'center', gap: 3 },
-  iconPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 5,
-    borderRadius: 999,
+  tab: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 9,
   },
-  iconPillActive: { backgroundColor: C.brandSoft },
-  label: { fontSize: 11, fontFamily: 'Pretendard-SemiBold', color: C.gray },
-  labelActive: { color: C.brandDeep, fontFamily: 'Pretendard-ExtraBold' },
+  pressed: { opacity: 0.62 },
+  label: {
+    color: SUB,
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: 'Pretendard-Regular',
+  },
+  labelActive: {
+    color: NAVY,
+    fontFamily: 'Pretendard-Bold',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: YELLOW,
+  },
+  dotHidden: { opacity: 0 },
 });
