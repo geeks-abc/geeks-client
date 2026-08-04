@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HomeHeader } from '@/components/header';
@@ -16,6 +16,7 @@ export default function FacilityFeed() {
   const router = useRouter();
   const facilityId = me?.facilityId;
   const [applying, setApplying] = useState<number | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const { data: feed, refresh } = usePolling(
     () => (facilityId ? api.feed(facilityId) : Promise.resolve([] as FeedItem[])),
@@ -25,11 +26,12 @@ export default function FacilityFeed() {
   const apply = async (item: FeedItem) => {
     if (!facilityId) return;
     setApplying(item.id);
+    setApplyError(null);
     try {
       const match = await api.applyMatch(item.id, facilityId);
       router.push(`/pickup/${match.id}`);
     } catch (e) {
-      Alert.alert('신청 실패', e instanceof Error ? e.message : '다시 시도해주세요.');
+      setApplyError(e instanceof Error ? e.message : '신청에 실패했어요. 다시 시도해주세요.');
       refresh();
     } finally {
       setApplying(null);
@@ -57,6 +59,12 @@ export default function FacilityFeed() {
 
         <SectionTitle>주변 기부 식품</SectionTitle>
         <Text style={s.feedMeta}>반경 3km · OPEN {feed?.length ?? 0}건 · 3초마다 자동 갱신</Text>
+
+        {applyError ? (
+          <View style={s.errorBox}>
+            <Text style={s.errorBoxText}>{applyError}</Text>
+          </View>
+        ) : null}
 
         {feed === null ? null : feed.length === 0 ? (
           <EmptyState
@@ -118,6 +126,8 @@ const s = StyleSheet.create({
   locationLabel: { fontSize: 11, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
   locationValue: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.text, marginTop: 2 },
   feedMeta: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.sub, marginTop: -8 },
+  errorBox: { backgroundColor: C.redSoft, borderRadius: 12, padding: 14 },
+  errorBoxText: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
   thumb: {
     width: 56,
     height: 56,

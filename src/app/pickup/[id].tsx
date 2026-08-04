@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Card, Row } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -13,42 +13,41 @@ export default function PickupDetail() {
   const router = useRouter();
   const matchId = Number(id);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const { data: match } = usePolling(() => api.match(matchId), 5000);
   const store = match?.listing?.store;
 
   const completeWithToken = async (qrToken: string) => {
     setBusy(true);
+    setError(null);
     try {
       const result = await api.completeMatch(matchId, qrToken);
-      Alert.alert(
-        '인수 완료!',
-        `${result.itemName} ${result.quantity}개 (${result.donation.weightKg}kg)\n기부확인서가 발급됐어요.`,
-        [{ text: '확인서 보기', onPress: () => router.replace(`/certificate/${result.donation.id}`) }],
-      );
+      // 인수 완료 → 확인서 화면으로 바로 이동
+      router.replace(`/certificate/${result.donation.id}`);
     } catch (e) {
-      Alert.alert('완료 실패', e instanceof Error ? e.message : '다시 시도해주세요.');
+      setError(e instanceof Error ? e.message : '완료 처리에 실패했어요.');
     } finally {
       setBusy(false);
     }
   };
 
-  const cancel = () => {
-    Alert.alert('픽업 취소', '이 픽업을 취소할까요? 품목은 다시 공개돼요.', [
-      { text: '아니요', style: 'cancel' },
-      {
-        text: '픽업 취소',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.cancelMatch(matchId);
-            router.back();
-          } catch (e) {
-            Alert.alert('취소 실패', e instanceof Error ? e.message : '');
-          }
-        },
-      },
-    ]);
+  const cancel = async () => {
+    if (!confirmCancel) {
+      setConfirmCancel(true);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api.cancelMatch(matchId);
+      router.back();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '취소에 실패했어요.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -80,6 +79,12 @@ export default function PickupDetail() {
           <Row label="연락처" value={store?.phone ?? '-'} />
         </Card>
 
+        {error ? (
+          <View style={s.errorBox}>
+            <Text style={s.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         <Button
           title="QR 스캔 시작"
           variant="dark"
@@ -95,7 +100,12 @@ export default function PickupDetail() {
         {store?.phone ? (
           <Button title="가게에 전화" variant="ghost" onPress={() => Linking.openURL(`tel:${store.phone}`)} />
         ) : null}
-        <Button title="픽업 취소" variant="danger" onPress={cancel} />
+        <Button
+          title={confirmCancel ? '한 번 더 누르면 픽업이 취소돼요' : '픽업 취소'}
+          variant="danger"
+          loading={busy && confirmCancel}
+          onPress={cancel}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -110,6 +120,8 @@ const s = StyleSheet.create({
     padding: 16,
   },
   photoLabel: { color: '#FFF', fontFamily: 'Pretendard-ExtraBold', fontSize: 14 },
+  errorBox: { backgroundColor: C.redSoft, borderRadius: 12, padding: 14 },
+  errorText: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
   confirmChip: {
     alignSelf: 'flex-start',
     backgroundColor: C.greenSoft,
