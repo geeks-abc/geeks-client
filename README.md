@@ -19,7 +19,7 @@ npx expo start
 
 iOS 시뮬레이터 `i` / Android 에뮬레이터 `a` / 실기기는 Expo Go로 QR 스캔.
 
-> **실기기 데모**: [src/lib/config.ts](src/lib/config.ts)의 `API_BASE`를 같은 와이파이의 맥 IP(`http://192.168.x.x:3000`) 또는 VPS 주소로 변경.
+> **실기기 데모**: Expo Go로 실행하면 개발 서버의 같은 Wi-Fi IP를 자동으로 사용해 API(`:3000`)에 연결합니다. 자동 감지가 안 되는 환경은 `.env`에 `EXPO_PUBLIC_API_BASE_URL=http://10.10.98.42:3000`처럼 직접 설정한 뒤 `npx expo start -c`로 재시작하세요. 서버도 같은 Wi-Fi에서 `npm run start:dev`로 실행되어야 합니다.
 
 ## 데모 계정 (비밀번호 공통 `password123`)
 
