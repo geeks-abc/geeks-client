@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BackButton } from '@/components/back-button';
 import { Button, Card, Row } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
@@ -20,20 +21,6 @@ export default function PickupDetail() {
 
   const { data: match } = usePolling(() => api.match(matchId), 5000);
   const store = match?.listing?.store;
-
-  const completeWithToken = async (qrToken: string) => {
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await api.completeMatch(matchId, qrToken);
-      // 인수 완료 → 확인서 화면으로 바로 이동
-      router.replace(`/certificate/${result.donation.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '완료 처리에 실패했어요.');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const cancel = async () => {
     if (!confirmCancel) {
@@ -55,6 +42,7 @@ export default function PickupDetail() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
+        <BackButton />
         <View style={s.photo}>
           <Text style={s.photoLabel}>{match?.listing?.itemName ?? ''}</Text>
         </View>
@@ -92,13 +80,6 @@ export default function PickupDetail() {
           variant="dark"
           onPress={() => router.push(`/scan?matchId=${matchId}`)}
         />
-        {match ? (
-          <Button
-            title="받았어요 (데모용 바로 완료)"
-            loading={busy}
-            onPress={() => completeWithToken(match.qrToken)}
-          />
-        ) : null}
         {store?.phone ? (
           <Button title="가게에 전화하기" variant="ghost" onPress={() => Linking.openURL(`tel:${store.phone}`)} />
         ) : null}
