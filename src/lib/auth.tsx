@@ -16,6 +16,7 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<Me>;
   quickLogin: (role: Role) => Promise<Me>;
+  adoptToken: (accessToken: string) => Promise<Me>;
   logout: () => Promise<void>;
 }
 
@@ -49,13 +50,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { accessToken } = await api.login(email, password);
+  // 발급받은 토큰 채택 (전화번호 인증·가입 완료 후)
+  const adoptToken = async (accessToken: string) => {
     setToken(accessToken);
     await AsyncStorage.setItem('token', accessToken);
     const profile = await api.me();
     setMe(profile);
     return profile;
+  };
+
+  const login = async (email: string, password: string) => {
+    const { accessToken } = await api.login(email, password);
+    return adoptToken(accessToken);
   };
 
   const quickLogin = (role: Role) => {
@@ -70,14 +76,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ me, loading, login, quickLogin, logout }}>
+    <AuthContext.Provider
+      value={{ me, loading, login, quickLogin, adoptToken, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// 홈 헤더의 "계정 전환" 공통 액션
+// 홈 헤더의 "계정 전환" 공통 액션 — 로그아웃 후 랜딩으로
 export function useSwitchAccount() {
   const router = useRouter();
-  return () => router.replace('/');
+  const { logout } = useAuth();
+  return async () => {
+    await logout();
+    router.replace('/');
+  };
 }

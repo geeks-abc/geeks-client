@@ -106,7 +106,9 @@ export interface AuthUser {
 }
 export interface Me {
   id: number;
-  email: string;
+  email: string | null;
+  phone: string | null;
+  nickname: string | null;
   role: Role;
   storeId: number | null;
   facilityId: number | null;
@@ -139,6 +141,25 @@ export const api = {
       body: { email, password },
     }),
   me: () => request<Me>('/auth/me'),
+
+  // 전화번호 온보딩 (랜딩 → 번호 → 인증코드 → [신규] 닉네임·유형)
+  phoneRequest: (phone: string) =>
+    request<{ demoCode: string; expiresInSec: number }>('/auth/phone/request', {
+      method: 'POST',
+      body: { phone },
+    }),
+  phoneVerify: (phone: string, code: string) =>
+    request<{
+      isNew: boolean;
+      accessToken?: string;
+      user?: AuthUser;
+      signupToken?: string;
+    }>('/auth/phone/verify', { method: 'POST', body: { phone, code } }),
+  phoneSignup: (signupToken: string, nickname: string, role: 'STORE' | 'FACILITY') =>
+    request<{ accessToken: string; user: AuthUser }>('/auth/phone/signup', {
+      method: 'POST',
+      body: { signupToken, nickname, role },
+    }),
 
   myListings: (storeId: number) => request<Listing[]>(`/listings?storeId=${storeId}`),
   listing: (id: number) => request<Listing>(`/listings/${id}`),
