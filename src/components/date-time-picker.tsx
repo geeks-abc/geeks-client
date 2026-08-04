@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SLOT_MINUTES, nextSlotAfter } from '@/components/time-picker';
 import { C } from '@/lib/theme';
@@ -82,8 +83,10 @@ export function DateTimePickerModal({
   }, [day, lowerBound]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Animated.View entering={FadeIn.duration(160)} style={s.backdropWrap}>
       <Pressable style={s.backdrop} onPress={onClose}>
+        <AnimatedSheet>
         <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={s.handle} />
           <Text style={s.title}>{title}</Text>
@@ -130,12 +133,19 @@ export function DateTimePickerModal({
             ) : null}
           </ScrollView>
         </Pressable>
+        </AnimatedSheet>
       </Pressable>
+      </Animated.View>
     </Modal>
   );
 }
 
+function AnimatedSheet({ children }: { children: React.ReactNode }) {
+  return <Animated.View entering={SlideInDown.duration(280)}>{children}</Animated.View>;
+}
+
 const s = StyleSheet.create({
+  backdropWrap: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: '#F9F9F5',

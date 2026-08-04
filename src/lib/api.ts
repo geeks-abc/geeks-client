@@ -99,14 +99,14 @@ export interface Donation {
 }
 export interface AuthUser {
   sub: number;
-  email: string;
+  phone: string | null;
+  nickname: string | null;
   role: Role;
   storeId: number | null;
   facilityId: number | null;
 }
 export interface Me {
   id: number;
-  email: string | null;
   phone: string | null;
   nickname: string | null;
   role: Role;
@@ -135,11 +135,6 @@ export interface Notice {
 
 // ── 엔드포인트 ────────────────────────────────────────
 export const api = {
-  login: (email: string, password: string) =>
-    request<{ accessToken: string; user: AuthUser }>('/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    }),
   me: () => request<Me>('/auth/me'),
   // 마이페이지 정보 수정 — 서버 계약(팀원 구현 예정): PATCH /api/auth/me
   // body: { nickname?, name?, address?, phone? } — name/address/phone은 연결된 가게/시설 프로필에 반영
@@ -163,10 +158,19 @@ export const api = {
       user?: AuthUser;
       signupToken?: string;
     }>('/auth/phone/verify', { method: 'POST', body: { phone, code } }),
-  phoneSignup: (signupToken: string, nickname: string, role: 'STORE' | 'FACILITY') =>
+  phoneSignup: (body: {
+    signupToken: string;
+    nickname: string;
+    role: 'STORE' | 'FACILITY';
+    address?: string;
+    addressDetail?: string;
+    contactPhone?: string;
+    photoUrl?: string; // 가게 대표 사진
+    facilityType?: string; // 기관 유형
+  }) =>
     request<{ accessToken: string; user: AuthUser }>('/auth/phone/signup', {
       method: 'POST',
-      body: { signupToken, nickname, role },
+      body,
     }),
 
   store: (id: number) => request<Store>(`/stores/${id}`),

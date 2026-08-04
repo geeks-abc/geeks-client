@@ -3,18 +3,16 @@ import { useRouter } from 'expo-router';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, Me, Role, setToken } from './api';
 
-// 시딩 스크립트(geeks-server npm run seed)의 데모 계정
-export const DEMO_ACCOUNTS: { role: Role; label: string; sub: string; email: string }[] = [
-  { role: 'STORE', label: '가게 A', sub: '어니언 베이커리 홍대점', email: 'store@demo.com' },
-  { role: 'FACILITY', label: '복지시설 B', sub: '마포 푸드뱅크', email: 'facility@demo.com' },
-  { role: 'ADMIN', label: '관리자', sub: '이음 운영팀', email: 'admin@demo.com' },
+// 시딩 스크립트(geeks-server npm run seed)의 데모 계정 (전화번호 인증)
+export const DEMO_ACCOUNTS: { role: Role; label: string; sub: string; phone: string }[] = [
+  { role: 'STORE', label: '가게 A', sub: '어니언 베이커리 홍대점', phone: '01011112222' },
+  { role: 'FACILITY', label: '복지시설 B', sub: '마포 푸드뱅크', phone: '01033334444' },
+  { role: 'ADMIN', label: '관리자', sub: '이음 운영팀', phone: '01055556666' },
 ];
-const DEMO_PASSWORD = 'password123';
 
 interface AuthState {
   me: Me | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<Me>;
   quickLogin: (role: Role) => Promise<Me>;
   adoptToken: (accessToken: string) => Promise<Me>;
   refresh: () => Promise<Me | null>;
@@ -70,14 +68,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    const { accessToken } = await api.login(email, password);
-    return adoptToken(accessToken);
-  };
-
-  const quickLogin = (role: Role) => {
+  // 데모 계정: 코드 발급 → 즉시 검증으로 로그인 (SMS 목업이라 가능)
+  const quickLogin = async (role: Role) => {
     const account = DEMO_ACCOUNTS.find((a) => a.role === role)!;
-    return login(account.email, DEMO_PASSWORD);
+    const { demoCode } = await api.phoneRequest(account.phone);
+    const res = await api.phoneVerify(account.phone, demoCode);
+    if (!res.accessToken) throw new Error('데모 계정이 시딩되지 않았어요. npm run seed를 실행해주세요.');
+    return adoptToken(res.accessToken);
   };
 
   const logout = async () => {
@@ -88,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ me, loading, login, quickLogin, adoptToken, refresh, logout }}
+      value={{ me, loading, quickLogin, adoptToken, refresh, logout }}
     >
       {children}
     </AuthContext.Provider>

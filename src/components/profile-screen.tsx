@@ -52,7 +52,6 @@ export function ProfileScreen() {
           <Row label="이름" value={profile?.name ?? '-'} />
           <Row label="주소" value={profile?.address ?? '-'} />
           <Row label="연락처" value={profile?.phone ?? '-'} />
-          {me?.email ? <Row label="이메일" value={me.email} /> : null}
           {me?.phone ? <Row label="가입 번호" value={formatPhone(me.phone)} /> : null}
         </View>
 
