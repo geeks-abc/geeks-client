@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -6,8 +7,8 @@ import { useAuth, useSwitchAccount } from '@/lib/auth';
 import { usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
 
-// 홈 공통 헤더: 로고 + 현재 접속 + 알림 벨(미읽음 뱃지) + 계정 전환
-export function HomeHeader({ subtitle, light }: { subtitle: string; light?: boolean }) {
+// 홈 공통 헤더 — 워드마크 + 알림 벨(미읽음 뱃지) + 계정 전환 아이콘
+export function HomeHeader({ light }: { subtitle?: string; light?: boolean }) {
   const { me } = useAuth();
   const router = useRouter();
   const switchAccount = useSwitchAccount();
@@ -20,29 +21,37 @@ export function HomeHeader({ subtitle, light }: { subtitle: string; light?: bool
         : null;
 
   const { data: unread } = usePolling(
-    () => (recipient ? api.unreadCount(recipient.type, recipient.id) : Promise.resolve({ count: 0 })),
+    () =>
+      recipient ? api.unreadCount(recipient.type, recipient.id) : Promise.resolve({ count: 0 }),
     5000,
   );
 
+  const fg = light ? '#FFFFFF' : C.text;
+
   return (
     <View style={s.wrap}>
-      <View>
-        <Text style={[s.logo, light && { color: C.brand }]}>이음</Text>
-        <Text style={[s.subtitle, light && { color: '#8D97AC' }]}>{subtitle}</Text>
-      </View>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <Text style={[s.logo, { color: fg }]}>이음</Text>
+      <View style={{ flexDirection: 'row', gap: 4 }}>
         {recipient ? (
-          <Pressable style={s.chip} onPress={() => router.push('/notifications')}>
-            <Text style={s.chipText}>알림</Text>
+          <Pressable
+            onPress={() => router.push('/notifications')}
+            hitSlop={6}
+            style={({ pressed }) => [s.iconButton, pressed && { opacity: 0.6 }]}
+          >
+            <Ionicons name="notifications-outline" size={23} color={fg} />
             {unread && unread.count > 0 ? (
               <View style={s.dot}>
-                <Text style={s.dotText}>{unread.count}</Text>
+                <Text style={s.dotText}>{unread.count > 9 ? '9+' : unread.count}</Text>
               </View>
             ) : null}
           </Pressable>
         ) : null}
-        <Pressable style={s.chip} onPress={switchAccount}>
-          <Text style={s.chipText}>계정 전환</Text>
+        <Pressable
+          onPress={switchAccount}
+          hitSlop={6}
+          style={({ pressed }) => [s.iconButton, pressed && { opacity: 0.6 }]}
+        >
+          <Ionicons name="swap-horizontal-outline" size={23} color={fg} />
         </Pressable>
       </View>
     </View>
@@ -54,30 +63,21 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: 8,
   },
-  logo: { fontSize: 22, fontFamily: 'Pretendard-Black', color: C.text },
-  subtitle: { fontSize: 11, fontFamily: 'Pretendard-Bold', color: C.sub, letterSpacing: 1.2, marginTop: 2 },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: C.card,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: C.line,
-  },
-  chipText: { fontSize: 13, fontFamily: 'Pretendard-Bold', color: C.text },
+  logo: { fontSize: 20, fontFamily: 'Pretendard-Black' },
+  iconButton: { padding: 6 },
   dot: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    position: 'absolute',
+    top: 2,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: C.red,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
   },
-  dotText: { color: '#FFF', fontSize: 11, fontFamily: 'Pretendard-ExtraBold' },
+  dotText: { color: '#FFF', fontSize: 9.5, fontFamily: 'Pretendard-ExtraBold' },
 });
