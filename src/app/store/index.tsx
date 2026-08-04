@@ -26,8 +26,8 @@ const P = {
   sub: '#6B7078',
   line: '#E0E3E0',
   orange: '#FF9740',
-  green: '#159A55',
-  greenSoft: '#DFF7E9',
+  green: '#E86618',
+  greenSoft: '#FFEFE2',
   blue: '#2E77D0',
 };
 
