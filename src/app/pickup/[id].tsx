@@ -1,6 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Linking, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { BackButton } from '@/components/back-button';
@@ -8,90 +9,61 @@ import { Button, Card, Row } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
-import { useSafeBack } from '@/lib/navigation';
 
-// S-05 매칭 상세 (시설) — 픽업 정보 + QR 스캔/완료 + 전화 + 취소
+// S-05 매칭 상세 (시설) — 픽업 정보 + 시설 QR 제시 + 가게 연락
 export default function PickupDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const goBackSafe = useSafeBack();
   const matchId = Number(id);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [confirmCancel, setConfirmCancel] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
   const { data: match } = usePolling(() => api.match(matchId), 5000);
   const store = match?.listing?.store;
   const directCode = match?.qrToken.replace(/\D/g, '').padEnd(6, '0').slice(0, 6) ?? '';
 
-  const cancel = async () => {
-    if (!confirmCancel) {
-      setConfirmCancel(true);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    try {
-      await api.cancelMatch(matchId);
-      goBackSafe();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : '취소에 실패했어요.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
-      <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }}>
-        <BackButton />
-        <View style={s.photo}>
-          <Text style={s.photoLabel}>{match?.listing?.itemName ?? ''}</Text>
-        </View>
-
-        <View style={s.confirmChip}>
-          <Text style={s.confirmChipText}>픽업이 정해졌어요</Text>
-        </View>
-        <Text style={s.storeName}>{store?.name ?? ''}</Text>
-        <Text style={s.storeMeta}>
-          총 {match?.listing?.quantity ?? '-'}개
-          {match?.listing ? ` · ${remainingLabel(match.listing.pickupEnd)}` : ''}
-        </Text>
-
-        <Card>
-          <Row label="주소" value={store?.address ?? '-'} />
-          <Row
-            label="픽업 시간"
-            value={
-              match?.listing
-                ? `${fmtTime(match.listing.pickupStart)}–${fmtTime(match.listing.pickupEnd)}`
-                : '-'
-            }
-          />
-          <Row label="연락처" value={store?.phone ?? '-'} />
-        </Card>
-
-        {error ? (
-          <View style={s.errorBox}>
-            <Text style={s.errorText}>{error}</Text>
+      <View style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={s.content}>
+          <BackButton />
+          <View style={s.photo}>
+            <Text style={s.photoLabel}>{match?.listing?.itemName ?? ''}</Text>
           </View>
-        ) : null}
 
-        <Button
-          title="시설 QR 보여주기"
-          variant="dark"
-          onPress={() => setQrOpen(true)}
-        />
-        {store?.phone ? (
-          <Button title="가게에 전화하기" variant="ghost" onPress={() => Linking.openURL(`tel:${store.phone}`)} />
-        ) : null}
-        <Button
-          title={confirmCancel ? '한 번 더 누르면 픽업이 취소돼요' : '픽업 취소'}
-          variant="danger"
-          loading={busy && confirmCancel}
-          onPress={cancel}
-        />
-      </ScrollView>
+          <View style={s.confirmChip}>
+            <Text style={s.confirmChipText}>픽업이 정해졌어요</Text>
+          </View>
+          <Text style={s.storeName}>{store?.name ?? ''}</Text>
+          <Text style={s.storeMeta}>
+            총 {match?.listing?.quantity ?? '-'}개
+            {match?.listing ? ` · ${remainingLabel(match.listing.pickupEnd)}` : ''}
+          </Text>
+
+          <Card>
+            <Row label="주소" value={store?.address ?? '-'} />
+            <Row
+              label="픽업 시간"
+              value={
+                match?.listing
+                  ? `${fmtTime(match.listing.pickupStart)}–${fmtTime(match.listing.pickupEnd)}`
+                  : '-'
+              }
+            />
+            <Row label="연락처" value={store?.phone ?? '-'} />
+          </Card>
+        </ScrollView>
+
+        <View style={s.actionBar}>
+          <Button title="시설 QR 보여주기" variant="dark" onPress={() => setQrOpen(true)} style={s.qrButton} />
+          <Pressable
+            accessibilityLabel="가게에 전화하기"
+            disabled={!store?.phone}
+            onPress={() => store?.phone && Linking.openURL(`tel:${store.phone}`)}
+            style={({ pressed }) => [s.callButton, !store?.phone && s.disabledButton, pressed && { opacity: 0.7 }]}
+          >
+            <Ionicons name="call" size={23} color="#FFFFFF" />
+          </Pressable>
+        </View>
+      </View>
 
       <Modal visible={qrOpen} animationType="slide" onRequestClose={() => setQrOpen(false)}>
         <SafeAreaView style={s.qrScreen} edges={['top', 'bottom']}>
@@ -123,8 +95,7 @@ const s = StyleSheet.create({
     padding: 16,
   },
   photoLabel: { color: '#FFF', fontFamily: 'Pretendard-ExtraBold', fontSize: 14 },
-  errorBox: { backgroundColor: C.redSoft, borderRadius: 12, padding: 14 },
-  errorText: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
+  content: { padding: 20, gap: 16, paddingBottom: 36 },
   confirmChip: {
     alignSelf: 'flex-start',
     backgroundColor: C.greenSoft,
@@ -143,4 +114,23 @@ const s = StyleSheet.create({
   qrItemName: { color: C.navy, fontSize: 17, fontFamily: 'Pretendard-ExtraBold', marginTop: 20 },
   qrHint: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular', marginTop: 18 },
   directCode: { color: C.navy, fontSize: 30, fontFamily: 'Pretendard-Black', letterSpacing: 5, marginTop: 6 },
+  actionBar: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    backgroundColor: C.card,
+    borderTopWidth: 1,
+    borderColor: C.line,
+  },
+  qrButton: { flex: 1 },
+  callButton: {
+    width: 54,
+    height: 54,
+    borderRadius: R.button,
+    backgroundColor: C.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: { backgroundColor: C.gray },
 });
