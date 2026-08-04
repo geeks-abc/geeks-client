@@ -1,7 +1,8 @@
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { BackButton } from '@/components/back-button';
@@ -26,7 +27,7 @@ export default function PickupDetail() {
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
           <View style={s.hero}>
             {match?.listing?.photoUrl ? (
-              <Image source={{ uri: match.listing.photoUrl }} style={s.heroImage} />
+              <Image transition={150} source={{ uri: match.listing.photoUrl }} style={s.heroImage} />
             ) : (
               <View style={s.heroFallback}>
                 <Ionicons name="fast-food-outline" size={72} color="#FFFFFF" />

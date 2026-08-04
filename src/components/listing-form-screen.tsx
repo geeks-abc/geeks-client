@@ -1,9 +1,9 @@
+import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,6 +19,7 @@ import { api, Listing } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
 import { useSafeBack } from '@/lib/navigation';
+import { notify } from '@/lib/feedback';
 
 const DRAFT_KEY = 'ieum:new-listing-draft:v1';
 
@@ -184,6 +185,7 @@ export function ListingFormScreen({ mode, listingId }: { mode: Mode; listingId?:
         await AsyncStorage.removeItem(DRAFT_KEY);
       }
 
+      notify.success(mode === 'edit' ? '수정을 저장했어요' : '나눔이 등록됐어요', mode === 'edit' ? undefined : '주변 시설에 알림을 보냈어요.');
       goBackSafe();
     } catch (e) {
       setError(e instanceof Error ? e.message : '저장하지 못했습니다. 다시 시도해 주세요.');
@@ -228,7 +230,7 @@ export function ListingFormScreen({ mode, listingId }: { mode: Mode; listingId?:
 
             <Pressable onPress={pickPhoto} style={({ pressed }) => [s.photoBox, pressed && s.pressed]}>
               {photoUri ? (
-                <Image source={{ uri: photoUri }} style={s.photo} />
+                <Image transition={150} source={{ uri: photoUri }} style={s.photo} />
               ) : null}
               <View style={s.photoOverlay}>
                 <Text style={s.photoText}>{photoUri ? '사진 변경' : '+ 음식 사진 추가'}</Text>

@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { api, Listing, ListingStatus } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fmtTime, isToday, remainingLabel, usePolling } from '@/lib/hooks';
+import { ListRowSkeleton } from '@/components/skeleton';
 
 const P = {
   outer: '#E7E7E3',
@@ -102,8 +103,10 @@ export default function StoreHome() {
             <Text style={s.sectionTitle}>내 등록 품목</Text>
 
             {listings === null ? (
-              <View style={s.loadingCard}>
-                <Text style={s.emptySub}>등록 품목을 불러오고 있습니다.</Text>
+              <View style={{ gap: 10 }}>
+                <ListRowSkeleton />
+                <ListRowSkeleton />
+                <ListRowSkeleton />
               </View>
             ) : visibleListings.length === 0 ? (
               <View style={s.emptyCard}>
@@ -165,7 +168,7 @@ function ListingCard({
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.foodCard, pressed && s.pressed]}>
       {listing.photoUrl ? (
-        <Image source={{ uri: listing.photoUrl }} style={s.foodImage} />
+        <Image transition={150} source={{ uri: listing.photoUrl }} style={s.foodImage} />
       ) : (
         <View style={[s.foodImage, { backgroundColor: accent }]}>
           <View style={s.foodImageFooter}>

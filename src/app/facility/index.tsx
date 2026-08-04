@@ -1,8 +1,8 @@
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -15,6 +15,7 @@ import { api, FeedItem } from '@/lib/api';
 import { useAuth, useSwitchAccount } from '@/lib/auth';
 import { usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
+import { FeedCardSkeleton } from '@/components/skeleton';
 
 const FALLBACK_COLORS = ['#FFA044', '#219B5A', '#F2B93D'];
 
@@ -107,7 +108,12 @@ export default function FacilityFeed() {
             <Text style={s.sectionSub}>반경 3km · OPEN {feed?.length ?? 0}건</Text>
           </View>
 
-          {feed === null ? null : feed.length === 0 ? (
+          {feed === null ? (
+            <View style={{ gap: 12 }}>
+              <FeedCardSkeleton />
+              <FeedCardSkeleton />
+            </View>
+          ) : feed.length === 0 ? (
             <View style={s.emptyCard}>
               <View style={s.emptyIcon}>
                 <Ionicons name="leaf-outline" size={30} color={C.brand} />
@@ -126,7 +132,7 @@ export default function FacilityFeed() {
                     style={({ pressed }) => [s.feedCard, pressed && { transform: [{ scale: 0.985 }] }]}
                   >
                     {item.photoUrl ? (
-                      <Image source={{ uri: item.photoUrl }} style={s.thumbnail} />
+                      <Image transition={150} source={{ uri: item.photoUrl }} style={s.thumbnail} />
                     ) : (
                       <View style={[s.thumbnail, { backgroundColor: FALLBACK_COLORS[index % FALLBACK_COLORS.length] }]}>
                         <View style={s.thumbnailFooter}>

@@ -3,6 +3,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Platform } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Toaster } from 'sonner-native';
 import { AuthProvider } from '@/lib/auth';
 import { C } from '@/lib/theme';
 
@@ -18,6 +20,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <StatusBar style="dark" />
       <Stack
@@ -35,6 +38,8 @@ export default function RootLayout() {
         <Stack.Screen name="new-listing" options={{ presentation: 'modal' }} />
         <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       </Stack>
+      <Toaster position="top-center" />
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -1,13 +1,15 @@
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
 import { useSafeBack } from '@/lib/navigation';
+import { notify } from '@/lib/feedback';
 
 // S-06 전달 최종 확인 — 이 단계에서만 실제 인수 완료 처리
 export default function DeliveryConfirm() {
@@ -32,6 +34,7 @@ export default function DeliveryConfirm() {
     setError(null);
     try {
       const result = await api.completeMatch(match.id, qrToken);
+      notify.success('전달이 완료됐어요', '기부확인서가 발급됐어요.');
       router.replace(`/donation-complete/${result.donation.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : '전달 완료 처리에 실패했어요.');
@@ -72,7 +75,7 @@ export default function DeliveryConfirm() {
             <Text style={s.sectionTitle}>전달 품목</Text>
             <View style={s.foodCard}>
               {match?.listing?.photoUrl ? (
-                <Image source={{ uri: match.listing.photoUrl }} style={s.foodImage} />
+                <Image transition={150} source={{ uri: match.listing.photoUrl }} style={s.foodImage} />
               ) : (
                 <View style={s.foodImage}><View style={s.foodFooter}><Text style={s.foodFooterText}>FOOD</Text></View></View>
               )}

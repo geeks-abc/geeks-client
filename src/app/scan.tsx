@@ -1,11 +1,12 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useRef, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
 import { C } from '@/lib/theme';
 import { useSafeBack } from '@/lib/navigation';
+import { notify } from '@/lib/feedback';
 
 // S-05 가게 QR 스캔 — 시설이 제시한 토큰을 최종 확인 화면으로 전달
 export default function Scan() {
@@ -16,6 +17,7 @@ export default function Scan() {
   const [busy, setBusy] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const handled = useRef(false);
+  const lastErrorAt = useRef(0);
 
   const onScanned = (data: string) => {
     if (handled.current) return;
@@ -32,7 +34,11 @@ export default function Scan() {
         params: { matchId: String(payload.matchId), qrToken: payload.qrToken },
       });
     } catch (e) {
-      Alert.alert('스캔 실패', e instanceof Error ? e.message : '올바른 이음 QR이 아니에요.');
+      const now = Date.now();
+      if (now - lastErrorAt.current > 2500) {
+        lastErrorAt.current = now;
+        notify.error('스캔 실패', e instanceof Error ? e.message : '올바른 이음 QR이 아니에요.');
+      }
     } finally {
       setBusy(false);
     }

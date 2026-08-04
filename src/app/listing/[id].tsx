@@ -1,9 +1,9 @@
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -16,6 +16,7 @@ import { api, ListingStatus } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
 import { useSafeBack } from '@/lib/navigation';
+import { notify } from '@/lib/feedback';
 
 const P = {
   outer: '#E7E7E3',
@@ -63,6 +64,7 @@ export default function ListingDetail() {
     setError(null);
     try {
       await api.cancelListing(listingId);
+      notify.success('나눔 등록을 취소했어요');
       setCancelOpen(false);
       router.replace('/store');
     } catch (e) {
@@ -78,8 +80,10 @@ export default function ListingDetail() {
     setError(null);
     try {
       const match = await api.applyMatch(listingId, me.facilityId);
+      notify.success('픽업이 확정됐어요', '픽업 정보를 확인해주세요.');
       router.replace(`/pickup/${match.id}`);
     } catch (e) {
+      notify.error('픽업 신청 실패', e instanceof Error ? e.message : undefined);
       setError(e instanceof Error ? e.message : '픽업 신청에 실패했습니다.');
       refresh();
     } finally {
@@ -132,7 +136,7 @@ export default function ListingDetail() {
 
           <View style={s.photoBox}>
             {listing.photoUrl ? (
-              <Image source={{ uri: listing.photoUrl }} style={s.photo} />
+              <Image transition={150} source={{ uri: listing.photoUrl }} style={s.photo} />
             ) : (
               <View style={s.photoFallback} />
             )}
@@ -201,12 +205,20 @@ export default function ListingDetail() {
           ) : null}
 
           {!isFacility && listing.status === 'MATCHED' && listing.match ? (
-            <Pressable
-              onPress={() => router.push(`/match/${listing.match?.id}`)}
-              style={({ pressed }) => [s.fullButton, pressed && s.pressed]}
-            >
-              <Text style={s.primaryButtonText}>매칭 상세 보기</Text>
-            </Pressable>
+            <View style={{ gap: 10 }}>
+              <Pressable
+                onPress={() => router.push(`/scan?matchId=${listing.match?.id}`)}
+                style={({ pressed }) => [s.fullButton, pressed && s.pressed]}
+              >
+                <Text style={s.primaryButtonText}>시설 QR 스캔하고 전달 완료</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push(`/match/${listing.match?.id}`)}
+                style={({ pressed }) => [s.secondaryButton, { alignSelf: 'stretch' }, pressed && s.pressed]}
+              >
+                <Text style={s.secondaryButtonText}>매칭 상세 보기</Text>
+              </Pressable>
+            </View>
           ) : null}
 
           {!isFacility && listing.status === 'COMPLETED' ? (
