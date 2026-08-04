@@ -119,6 +119,7 @@ const s = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 20,
     paddingTop: 12,
+    paddingBottom: 20,
     backgroundColor: C.card,
     borderTopWidth: 1,
     borderColor: C.line,
