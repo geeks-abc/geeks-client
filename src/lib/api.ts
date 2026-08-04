@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system/legacy';
 import { API_BASE } from './config';
 
 let authToken: string | null = null;
@@ -197,10 +198,23 @@ export const api = {
       { method: 'PATCH' },
     ),
 
+  // RN fetch+FormData는 파일이 누락되는 케이스가 있어 FileSystem.uploadAsync 사용
   upload: async (uri: string): Promise<{ url: string }> => {
-    const form = new FormData();
-    const name = uri.split('/').pop() ?? 'photo.jpg';
-    form.append('file', { uri, name, type: 'image/jpeg' } as unknown as Blob);
-    return request<{ url: string }>('/uploads', { method: 'POST', formData: form });
+    const result = await FileSystem.uploadAsync(`${API_BASE}/api/uploads`, uri, {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+      fieldName: 'file',
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+    });
+    let data: any = null;
+    try {
+      data = JSON.parse(result.body);
+    } catch {
+      /* ignore */
+    }
+    if (result.status < 200 || result.status >= 300) {
+      throw new ApiError(result.status, data?.message ?? `업로드 실패 (${result.status})`);
+    }
+    return data as { url: string };
   },
 };

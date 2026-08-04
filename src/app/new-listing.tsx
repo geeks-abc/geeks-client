@@ -1,8 +1,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -10,46 +9,87 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TextInputProps,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Field, Headline } from '@/components/ui';
+import {
+  buildSlots,
+  nextSlotAfter,
+  slotLabel,
+  TimeSlotModal,
+} from '@/components/time-picker';
+import { Button, Headline } from '@/components/ui';
 import { api } from '@/lib/api';
-import { API_BASE } from '@/lib/config';
 import { useAuth } from '@/lib/auth';
+import { API_BASE } from '@/lib/config';
 import { C, R } from '@/lib/theme';
 
 // S-02 품목 등록 — "30초면 등록 끝!"
 export default function NewListing() {
   const router = useRouter();
   const { me } = useAuth();
+
+  // 화면 진입 시각 기준으로 슬롯 고정 (현재 시각 다음 30분 경계부터)
+  const firstSlot = useMemo(() => nextSlotAfter(new Date()), []);
+  const startSlots = useMemo(() => buildSlots(firstSlot, 16), [firstSlot]); // 8시간 범위
+
   const [itemName, setItemName] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [startTime, setStartTime] = useState('19:30');
-  const [endTime, setEndTime] = useState('20:30');
+  const [pickupStart, setPickupStart] = useState<Date>(firstSlot);
+  const [pickupEnd, setPickupEnd] = useState<Date>(
+    () => new Date(firstSlot.getTime() + 60 * 60000), // 기본: 시작 + 1시간
+  );
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [picker, setPicker] = useState<'start' | 'end' | null>(null);
+
+  // 종료 슬롯은 항상 시작 이후 30분부터 (6시간 범위)
+  const endSlots = useMemo(
+    () => buildSlots(new Date(pickupStart.getTime() + 30 * 60000), 12),
+    [pickupStart],
+  );
+
+  const selectStart = (slot: Date) => {
+    setPickupStart(slot);
+    // 종료가 시작보다 빠르거나 같아지면 시작 + 1시간으로 보정
+    if (pickupEnd.getTime() <= slot.getTime()) {
+      setPickupEnd(new Date(slot.getTime() + 60 * 60000));
+    }
+  };
 
   const pickPhoto = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.6 });
+    setError(null);
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setError('사진 접근 권한이 필요해요. 설정에서 허용해주세요.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      quality: 0.5,
+    });
     if (!result.canceled) setPhotoUri(result.assets[0].uri);
   };
 
-  const toIso = (hhmm: string) => {
-    const [h, m] = hhmm.split(':').map(Number);
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    // 픽업 시간이 이미 지난 경우 내일로 (데모 편의)
-    if (d.getTime() < Date.now() - 60 * 1000) d.setDate(d.getDate() + 1);
-    return d.toISOString();
-  };
-
   const submit = async () => {
-    if (!me?.storeId) return;
-    if (!itemName.trim() || !quantity.trim()) {
-      Alert.alert('입력 확인', '품목명과 수량을 입력해주세요.');
+    setError(null);
+    if (!me?.storeId) {
+      setError('가게 계정으로 로그인해주세요.');
       return;
     }
+    if (!itemName.trim()) {
+      setError('품목명을 입력해주세요.');
+      return;
+    }
+    const qty = Number(quantity);
+    if (!quantity.trim() || !Number.isInteger(qty) || qty < 1) {
+      setError('수량은 1 이상의 숫자로 입력해주세요.');
+      return;
+    }
+
     setBusy(true);
     try {
       let photoUrl: string | undefined;
@@ -60,14 +100,14 @@ export default function NewListing() {
       await api.createListing({
         storeId: me.storeId,
         itemName: itemName.trim(),
-        quantity: Number(quantity),
+        quantity: qty,
         photoUrl,
-        pickupStart: toIso(startTime),
-        pickupEnd: toIso(endTime),
+        pickupStart: pickupStart.toISOString(),
+        pickupEnd: pickupEnd.toISOString(),
       });
       router.back();
     } catch (e) {
-      Alert.alert('등록 실패', e instanceof Error ? e.message : '다시 시도해주세요.');
+      setError(e instanceof Error ? e.message : '등록에 실패했어요. 다시 시도해주세요.');
     } finally {
       setBusy(false);
     }
@@ -79,41 +119,103 @@ export default function NewListing() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 18 }} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={{ padding: 24, gap: 18 }}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={s.eyebrow}>30초면 등록 끝!</Text>
           <Headline>{'오늘 남은 식품을\n빠르게 등록하세요.'}</Headline>
 
           <Pressable onPress={pickPhoto} style={s.photoBox}>
             {photoUri ? (
-              <Image source={{ uri: photoUri }} style={{ width: '100%', height: '100%', borderRadius: R.card }} />
+              <>
+                <Image source={{ uri: photoUri }} style={s.photo} />
+                <View style={s.photoEdit}>
+                  <Text style={s.photoEditText}>사진 변경</Text>
+                </View>
+              </>
             ) : (
               <Text style={s.photoText}>+ 음식 사진 추가 (선택)</Text>
             )}
           </Pressable>
+          {photoUri ? (
+            <Pressable onPress={() => setPhotoUri(null)}>
+              <Text style={s.photoRemove}>사진 제거</Text>
+            </Pressable>
+          ) : null}
 
-          <Field label="품목명" placeholder="소보로빵 외 3종" value={itemName} onChangeText={setItemName} />
-          <Field
-            label="수량"
-            placeholder="18"
-            value={quantity}
-            onChangeText={setQuantity}
-            keyboardType="number-pad"
-          />
+          <View style={{ gap: 8 }}>
+            <Text style={s.label}>품목명</Text>
+            <Pressable style={s.inputWrap}>
+              <TextInputBox
+                value={itemName}
+                onChangeText={setItemName}
+                placeholder="소보로빵 외 3종"
+              />
+            </Pressable>
+          </View>
+
+          <View style={{ gap: 8 }}>
+            <Text style={s.label}>수량</Text>
+            <TextInputBox
+              value={quantity}
+              onChangeText={(t: string) => setQuantity(t.replace(/[^0-9]/g, ''))}
+              placeholder="18"
+              keyboardType="number-pad"
+            />
+          </View>
+
           <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="픽업 시작" value={startTime} onChangeText={setStartTime} placeholder="19:30" />
+            <View style={{ flex: 1, gap: 8 }}>
+              <Text style={s.label}>픽업 시작</Text>
+              <Pressable style={s.timeButton} onPress={() => setPicker('start')}>
+                <Text style={s.timeText}>{slotLabel(pickupStart)}</Text>
+                <Text style={s.timeCaret}>▾</Text>
+              </Pressable>
             </View>
-            <View style={{ flex: 1 }}>
-              <Field label="픽업 종료" value={endTime} onChangeText={setEndTime} placeholder="20:30" />
+            <View style={{ flex: 1, gap: 8 }}>
+              <Text style={s.label}>픽업 종료</Text>
+              <Pressable style={s.timeButton} onPress={() => setPicker('end')}>
+                <Text style={s.timeText}>{slotLabel(pickupEnd)}</Text>
+                <Text style={s.timeCaret}>▾</Text>
+              </Pressable>
             </View>
           </View>
+
+          {error ? (
+            <View style={s.errorBox}>
+              <Text style={s.errorText}>{error}</Text>
+            </View>
+          ) : null}
 
           <Button title="OPEN 상태로 등록" variant="dark" loading={busy} onPress={submit} />
           <Button title="닫기" variant="ghost" onPress={() => router.back()} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TimeSlotModal
+        visible={picker === 'start'}
+        title="픽업 시작 시간"
+        slots={startSlots}
+        selected={pickupStart}
+        onSelect={selectStart}
+        onClose={() => setPicker(null)}
+      />
+      <TimeSlotModal
+        visible={picker === 'end'}
+        title="픽업 종료 시간"
+        slots={endSlots}
+        selected={pickupEnd}
+        onSelect={setPickupEnd}
+        onClose={() => setPicker(null)}
+      />
     </SafeAreaView>
   );
+}
+
+// 내부 전용 얇은 인풋 래퍼
+function TextInputBox(props: TextInputProps) {
+  return <TextInput placeholderTextColor={C.gray} {...props} style={s.input} />;
 }
 
 const s = StyleSheet.create({
@@ -126,5 +228,48 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  photo: { width: '100%', height: '100%' },
+  photoEdit: {
+    position: 'absolute',
+    bottom: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  photoEditText: { color: '#FFF', fontSize: 12, fontWeight: '700' },
   photoText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+  photoRemove: { color: C.sub, fontSize: 12, textAlign: 'right', marginTop: -10 },
+  label: { fontSize: 13, color: C.sub, fontWeight: '600' },
+  inputWrap: {},
+  input: {
+    backgroundColor: C.card,
+    borderRadius: R.chip,
+    borderWidth: 1,
+    borderColor: C.line,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: C.text,
+  },
+  timeButton: {
+    backgroundColor: C.card,
+    borderRadius: R.chip,
+    borderWidth: 1,
+    borderColor: C.line,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timeText: { fontSize: 16, fontWeight: '700', color: C.text },
+  timeCaret: { color: C.sub, fontSize: 12 },
+  errorBox: {
+    backgroundColor: C.redSoft,
+    borderRadius: R.chip,
+    padding: 14,
+  },
+  errorText: { color: C.red, fontSize: 13, fontWeight: '600' },
 });
