@@ -20,6 +20,7 @@ export default function Pickups() {
         ? api.facilityMatches(me.facilityId, 'MATCHED')
         : Promise.resolve([] as Match[]),
     3000,
+    [me?.facilityId],
   );
 
   return (

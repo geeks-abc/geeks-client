@@ -32,6 +32,7 @@ export default function Notifications() {
         ? api.notifications(recipient.type, recipient.id)
         : Promise.resolve([] as Notice[]),
     5000,
+    [recipient?.type, recipient?.id],
   );
 
   // 알림함을 열면 전체 읽음 처리 (벨 뱃지 초기화)

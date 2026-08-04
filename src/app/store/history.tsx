@@ -18,6 +18,7 @@ export default function StoreHistory() {
     () =>
       me?.storeId ? api.donations({ storeId: me.storeId }) : Promise.resolve([] as Donation[]),
     5000,
+    [me?.storeId],
   );
 
   return (

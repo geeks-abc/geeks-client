@@ -24,6 +24,7 @@ export function HomeHeader({ light }: { subtitle?: string; light?: boolean }) {
     () =>
       recipient ? api.unreadCount(recipient.type, recipient.id) : Promise.resolve({ count: 0 }),
     5000,
+    [recipient?.type, recipient?.id],
   );
 
   const fg = light ? '#FFFFFF' : C.text;

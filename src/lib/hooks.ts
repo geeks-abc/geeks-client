@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // 3초 폴링 기본 — 명세서 "신규 등록 → 피드 반영 3초 이내"
-export function usePolling<T>(fetcher: () => Promise<T>, intervalMs = 3000) {
+// deps가 바뀌면(예: 로그인 완료로 storeId 확보) 즉시 다시 요청
+export function usePolling<T>(
+  fetcher: () => Promise<T>,
+  intervalMs = 3000,
+  deps: unknown[] = [],
+) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fetcherRef = useRef(fetcher);
@@ -20,7 +25,8 @@ export function usePolling<T>(fetcher: () => Promise<T>, intervalMs = 3000) {
     refresh();
     const timer = setInterval(refresh, intervalMs);
     return () => clearInterval(timer);
-  }, [refresh, intervalMs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refresh, intervalMs, ...deps]);
 
   return { data, error, refresh };
 }

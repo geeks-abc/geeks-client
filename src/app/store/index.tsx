@@ -38,6 +38,7 @@ export default function StoreHome() {
   const { data: listings, refresh } = usePolling(
     () => (storeId ? api.myListings(storeId) : Promise.resolve([] as Listing[])),
     3000,
+    [storeId],
   );
 
   const onRefresh = async () => {

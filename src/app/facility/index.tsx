@@ -21,6 +21,7 @@ export default function FacilityFeed() {
   const { data: feed, refresh } = usePolling(
     () => (facilityId ? api.feed(facilityId) : Promise.resolve([] as FeedItem[])),
     3000,
+    [facilityId],
   );
 
   const apply = async (item: FeedItem) => {

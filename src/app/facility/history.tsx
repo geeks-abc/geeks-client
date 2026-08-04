@@ -18,6 +18,7 @@ export default function FacilityHistory() {
         ? api.donations({ facilityId: me.facilityId })
         : Promise.resolve([] as Donation[]),
     5000,
+    [me?.facilityId],
   );
 
   return (
