@@ -5,6 +5,7 @@ import { AppTabBar, TabMeta } from '@/components/tab-bar';
 const TABS: Record<string, TabMeta> = {
   index: { icon: 'home', label: '홈' },
   history: { icon: 'receipt', label: '내역' },
+  profile: { icon: 'person', label: '내 정보' },
 };
 
 export default function StoreTabs() {
@@ -15,6 +16,7 @@ export default function StoreTabs() {
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="history" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }

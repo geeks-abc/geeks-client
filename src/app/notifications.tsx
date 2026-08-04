@@ -9,10 +9,10 @@ import { fmtDateTime, usePolling } from '@/lib/hooks';
 import { C } from '@/lib/theme';
 
 const TYPE_LABEL: Record<string, string> = {
-  NEW_LISTING: '새 기부 등록',
-  MATCHED: '매칭 확정',
-  COMPLETED: '인수 완료',
-  MATCH_CANCELLED: '픽업 취소',
+  NEW_LISTING: '주변에 새로운 나눔',
+  MATCHED: '픽업이 정해졌어요',
+  COMPLETED: '전달 완료',
+  MATCH_CANCELLED: '픽업이 취소됐어요',
 };
 
 export default function Notifications() {

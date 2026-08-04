@@ -58,7 +58,7 @@ export default function PickupDetail() {
         </View>
 
         <View style={s.confirmChip}>
-          <Text style={s.confirmChipText}>MATCH CONFIRMED</Text>
+          <Text style={s.confirmChipText}>픽업이 정해졌어요</Text>
         </View>
         <Text style={s.storeName}>{store?.name ?? ''}</Text>
         <Text style={s.storeMeta}>
@@ -86,19 +86,19 @@ export default function PickupDetail() {
         ) : null}
 
         <Button
-          title="QR 스캔 시작"
+          title="가게 QR 스캔하기"
           variant="dark"
           onPress={() => router.push(`/scan?matchId=${matchId}`)}
         />
         {match ? (
           <Button
-            title="인수 완료 처리 (데모용)"
+            title="받았어요 (데모용 바로 완료)"
             loading={busy}
             onPress={() => completeWithToken(match.qrToken)}
           />
         ) : null}
         {store?.phone ? (
-          <Button title="가게에 전화" variant="ghost" onPress={() => Linking.openURL(`tel:${store.phone}`)} />
+          <Button title="가게에 전화하기" variant="ghost" onPress={() => Linking.openURL(`tel:${store.phone}`)} />
         ) : null}
         <Button
           title={confirmCancel ? '한 번 더 누르면 픽업이 취소돼요' : '픽업 취소'}

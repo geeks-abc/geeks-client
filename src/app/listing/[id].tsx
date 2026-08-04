@@ -9,11 +9,11 @@ import { fmtDateTime, fmtTime, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
 
 const STATUS_NOTE: Record<string, string> = {
-  OPEN: '주변 시설의 수령 신청을 기다리고 있어요.',
-  MATCHED: '매칭이 확정됐어요! 픽업 시 QR을 보여주세요.',
-  COMPLETED: '인수가 완료된 기부예요.',
-  EXPIRED: '픽업 시간이 지나 마감된 품목이에요.',
-  CANCELLED: '취소된 품목이에요.',
+  OPEN: '주변 복지시설을 찾고 있어요. 신청이 오면 바로 알려드릴게요.',
+  MATCHED: '받아갈 곳이 정해졌어요! 방문하면 QR을 보여주세요.',
+  COMPLETED: '이웃에게 따뜻하게 전달된 나눔이에요.',
+  EXPIRED: '픽업 시간이 지나 마감됐어요. 다음에 다시 나눠주세요.',
+  CANCELLED: '취소한 등록이에요.',
 };
 
 // 품목 상세 (가게 관점) — 상태별 액션 허브
@@ -101,7 +101,7 @@ export default function ListingDetail() {
 
             {listing.status === 'MATCHED' && listing.match ? (
               <Button
-                title="픽업 QR 보기"
+                title="픽업 QR 보여주기"
                 variant="dark"
                 onPress={() => router.push(`/match/${listing.match!.id}`)}
               />
@@ -113,7 +113,7 @@ export default function ListingDetail() {
 
             {listing.status === 'OPEN' ? (
               <Button
-                title={confirmCancel ? '한 번 더 누르면 등록이 취소돼요' : '등록 취소'}
+                title={confirmCancel ? '한 번 더 누르면 나눔이 취소돼요' : '나눔 취소하기'}
                 variant="danger"
                 loading={busy}
                 onPress={cancelListing}

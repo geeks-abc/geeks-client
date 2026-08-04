@@ -123,8 +123,8 @@ export default function NewListing() {
           contentContainerStyle={{ padding: 24, gap: 18 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={s.eyebrow}>30초면 등록 끝!</Text>
-          <Headline>{'오늘 남은 식품을\n빠르게 등록하세요.'}</Headline>
+          <Text style={s.eyebrow}>30초면 충분해요</Text>
+          <Headline>{'오늘 남은 식품,\n버리지 말고 나눠요'}</Headline>
 
           <Pressable onPress={pickPhoto} style={s.photoBox}>
             {photoUri ? (
@@ -188,8 +188,8 @@ export default function NewListing() {
             </View>
           ) : null}
 
-          <Button title="OPEN 상태로 등록" variant="dark" loading={busy} onPress={submit} />
-          <Button title="닫기" variant="ghost" onPress={() => router.back()} />
+          <Button title="이웃에게 나눔 알리기" loading={busy} onPress={submit} />
+          <Button title="다음에 할게요" variant="ghost" onPress={() => router.back()} />
         </ScrollView>
       </KeyboardAvoidingView>
 

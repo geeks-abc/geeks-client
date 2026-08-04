@@ -21,11 +21,11 @@ const STATUS_TEXT: Record<
   ListingStatus,
   { label: string; color: string }
 > = {
-  OPEN: { label: '매칭 대기', color: C.brand },
-  MATCHED: { label: '픽업 예정', color: C.blue },
-  COMPLETED: { label: '완료', color: C.sub },
-  EXPIRED: { label: '마감', color: C.gray },
-  CANCELLED: { label: '취소', color: C.gray },
+  OPEN: { label: '받아갈 곳 찾는 중', color: C.brand },
+  MATCHED: { label: '곧 가지러 와요', color: C.blue },
+  COMPLETED: { label: '전달 완료', color: C.sub },
+  EXPIRED: { label: '마감됨', color: C.gray },
+  CANCELLED: { label: '취소됨', color: C.gray },
 };
 
 // S-01 가게 홈

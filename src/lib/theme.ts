@@ -23,13 +23,14 @@ export const C = {
 
 export const R = { card: 20, chip: 12, button: 14 };
 
+// 소비자 언어 상태 라벨 (뱃지용)
 export const STATUS_META: Record<
   string,
   { label: string; fg: string; bg: string }
 > = {
-  OPEN: { label: 'OPEN', fg: C.brandDeep, bg: C.brandSoft },
-  MATCHED: { label: 'MATCHED', fg: C.blue, bg: C.blueSoft },
-  COMPLETED: { label: '완료', fg: '#FFFFFF', bg: C.navy },
-  EXPIRED: { label: '마감', fg: C.sub, bg: C.graySoft },
+  OPEN: { label: '신청 가능', fg: C.brandDeep, bg: C.brandSoft },
+  MATCHED: { label: '픽업 예정', fg: C.blue, bg: C.blueSoft },
+  COMPLETED: { label: '전달 완료', fg: '#FFFFFF', bg: C.navy },
+  EXPIRED: { label: '마감됨', fg: C.sub, bg: C.graySoft },
   CANCELLED: { label: '취소됨', fg: C.red, bg: C.redSoft },
 };

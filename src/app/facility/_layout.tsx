@@ -6,6 +6,7 @@ const TABS: Record<string, TabMeta> = {
   index: { icon: 'storefront', label: '피드' },
   pickups: { icon: 'qr-code', label: '픽업' },
   history: { icon: 'receipt', label: '내역' },
+  profile: { icon: 'person', label: '내 정보' },
 };
 
 export default function FacilityTabs() {
@@ -17,6 +18,7 @@ export default function FacilityTabs() {
       <Tabs.Screen name="index" />
       <Tabs.Screen name="pickups" />
       <Tabs.Screen name="history" />
+      <Tabs.Screen name="profile" />
     </Tabs>
   );
 }

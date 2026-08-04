@@ -24,7 +24,7 @@ export default function StoreMatchDetail() {
           <Text style={s.heroLogo}>이음</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <Text style={s.heroTitle}>
-              {completed ? '인수가 완료됐어요!' : '매칭이 확정됐어요'}
+              {completed ? '전달이 완료됐어요!' : '받아갈 곳이 정해졌어요'}
             </Text>
             <Badge status={completed ? 'COMPLETED' : 'MATCHED'} />
           </View>
@@ -57,14 +57,14 @@ export default function StoreMatchDetail() {
                 size={200}
                 color={C.navy}
               />
-              <Text style={s.qrHint}>시설 담당자가 이 QR을 스캔하면 인수가 완료돼요.</Text>
+              <Text style={s.qrHint}>방문한 시설 담당자가 이 QR을 스캔하면 전달이 완료돼요.</Text>
             </Card>
-            <Button title="인수 완료 대기 중…" onPress={() => {}} disabled />
+            <Button title="시설 도착을 기다리는 중…" onPress={() => {}} disabled />
           </>
         ) : null}
 
         {completed ? (
-          <Button title="기부 내역에서 확인서 보기" variant="dark" onPress={() => router.replace('/store/history')} />
+          <Button title="기부확인서 확인하러 가기" variant="dark" onPress={() => router.replace('/store/history')} />
         ) : null}
 
         <Button title="뒤로" variant="ghost" onPress={() => router.back()} />
