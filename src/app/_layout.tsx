@@ -2,6 +2,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+import { Platform } from 'react-native';
 import { AuthProvider } from '@/lib/auth';
 import { C } from '@/lib/theme';
 
@@ -23,6 +24,9 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: C.bg },
+          // 웹에서 스택 전환 애니메이션이 opacity:0 상태로 멈춰
+          // 화면이 빈 페이지로 보이는 문제 방지
+          animation: Platform.OS === 'web' ? 'none' : 'default',
         }}
       >
         <Stack.Screen name="index" />
