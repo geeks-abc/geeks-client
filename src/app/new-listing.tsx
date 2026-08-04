@@ -219,7 +219,7 @@ function TextInputBox(props: TextInputProps) {
 }
 
 const s = StyleSheet.create({
-  eyebrow: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: '#B4950A' },
+  eyebrow: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: C.brandDeep },
   photoBox: {
     height: 180,
     borderRadius: R.card,

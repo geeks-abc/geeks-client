@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { HomeHeader } from '@/components/header';
 import { Badge, Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { api, Listing } from '@/lib/api';
@@ -58,18 +59,20 @@ export default function StoreHome() {
           <Text style={s.currentChipText}>현재 접속: {me?.store?.name ?? '가게'}</Text>
         </View>
 
-        <Text style={s.headline}>남은 식품을{'\n'}오늘도 이어볼까요?</Text>
+        <Animated.Text entering={FadeInDown.duration(500)} style={s.headline}>
+          남은 식품을{'\n'}오늘도 이어볼까요?
+        </Animated.Text>
 
-        <View style={s.statCard}>
+        <Animated.View entering={FadeInUp.delay(120).duration(500)} style={s.statCard}>
           {stats.map((stat) => (
             <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
               <Text style={s.statLabel}>{stat.label}</Text>
-              <Text style={[s.statValue, stat.label === '매칭' && { color: C.yellow }]}>
+              <Text style={[s.statValue, stat.label === '매칭' && { color: C.brandOnDark }]}>
                 {stat.value}건
               </Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         <Button title="+ 기부 품목 등록" onPress={() => router.push('/new-listing')} />
 
@@ -78,19 +81,21 @@ export default function StoreHome() {
           <EmptyState title="아직 등록한 품목이 없어요" sub="30초면 오늘 남은 식품을 등록할 수 있어요." />
         ) : (
           listings.map((listing) => (
-            <Pressable key={listing.id} onPress={() => onPressListing(listing)}>
-              <Card style={s.listingCard}>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <Text style={s.listingStore}>{me?.store?.name}</Text>
-                  <Text style={s.listingName}>{listing.itemName}</Text>
-                  <Text style={s.listingMeta}>
-                    {listing.quantity}개 · {fmtTime(listing.pickupEnd)} 마감
-                  </Text>
-                  <Badge status={listing.status} />
-                </View>
-                <Text style={s.arrow}>→</Text>
-              </Card>
-            </Pressable>
+            <Animated.View key={listing.id} entering={FadeInUp.duration(400)}>
+              <Pressable onPress={() => onPressListing(listing)}>
+                <Card style={s.listingCard}>
+                  <View style={{ flex: 1, gap: 4 }}>
+                    <Text style={s.listingStore}>{me?.store?.name}</Text>
+                    <Text style={s.listingName}>{listing.itemName}</Text>
+                    <Text style={s.listingMeta}>
+                      {listing.quantity}개 · {fmtTime(listing.pickupEnd)} 마감
+                    </Text>
+                    <Badge status={listing.status} />
+                  </View>
+                  <Text style={s.arrow}>→</Text>
+                </Card>
+              </Pressable>
+            </Animated.View>
           ))
         )}
       </ScrollView>
@@ -101,12 +106,12 @@ export default function StoreHome() {
 const s = StyleSheet.create({
   currentChip: {
     alignSelf: 'flex-end',
-    backgroundColor: C.yellowSoft,
+    backgroundColor: C.brandSoft,
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  currentChipText: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: '#6B6300' },
+  currentChipText: { fontSize: 12, fontFamily: 'Pretendard-Bold', color: C.brandDeep },
   headline: { fontSize: 26, fontFamily: 'Pretendard-Black', color: C.text, lineHeight: 36 },
   statCard: {
     flexDirection: 'row',

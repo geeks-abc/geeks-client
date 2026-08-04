@@ -54,5 +54,5 @@ const s = StyleSheet.create({
   item: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   meta: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub },
   date: { fontSize: 12, fontFamily: 'Pretendard-Regular', color: C.gray },
-  link: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: '#B4950A' },
+  link: { fontSize: 13, fontFamily: 'Pretendard-ExtraBold', color: C.brandDeep },
 });

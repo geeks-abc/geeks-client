@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 import { HomeHeader } from '@/components/header';
 import { Badge, Button, Card, EmptyState, SectionTitle } from '@/components/ui';
 import { api, FeedItem } from '@/lib/api';
@@ -66,7 +67,8 @@ export default function FacilityFeed() {
           feed.map((item) => {
             const urgent = item.remainingMinutes <= 45;
             return (
-              <Card key={item.id} style={{ gap: 10 }}>
+              <Animated.View key={item.id} entering={FadeInUp.duration(400)}>
+              <Card style={{ gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <View style={s.thumb}>
                     <Text style={s.thumbText}>FOOD</Text>
@@ -99,6 +101,7 @@ export default function FacilityFeed() {
                   </Pressable>
                 </View>
               </Card>
+              </Animated.View>
             );
           })
         )}
@@ -109,7 +112,7 @@ export default function FacilityFeed() {
 
 const s = StyleSheet.create({
   profileCard: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 },
-  profileDot: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.yellow },
+  profileDot: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.brand },
   profileLabel: { fontSize: 11, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
   profileName: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   locationLabel: { fontSize: 11, color: C.sub, fontFamily: 'Pretendard-SemiBold' },
@@ -131,7 +134,7 @@ const s = StyleSheet.create({
   urgent: { backgroundColor: C.redSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   urgentText: { fontSize: 11, fontFamily: 'Pretendard-ExtraBold', color: C.red },
   timeChip: {
-    backgroundColor: C.yellow,
+    backgroundColor: C.brand,
     borderRadius: 14,
     paddingHorizontal: 14,
     justifyContent: 'center',

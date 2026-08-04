@@ -75,7 +75,7 @@ export default function StoreMatchDetail() {
 
 const s = StyleSheet.create({
   hero: { backgroundColor: C.navy, borderRadius: 24, padding: 24, gap: 10 },
-  heroLogo: { color: C.yellow, fontFamily: 'Pretendard-Black', fontSize: 16 },
+  heroLogo: { color: C.brand, fontFamily: 'Pretendard-Black', fontSize: 16 },
   heroTitle: { color: '#FFF', fontSize: 22, fontFamily: 'Pretendard-Black' },
   heroSub: { color: '#AAB4C8', fontSize: 14, fontFamily: 'Pretendard-SemiBold' },
   itemName: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text, marginBottom: 8 },

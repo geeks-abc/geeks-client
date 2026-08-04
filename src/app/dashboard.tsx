@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { HomeHeader } from '@/components/header';
 import { Card, SectionTitle } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -12,8 +13,8 @@ export default function Dashboard() {
   const { data: impact } = usePolling(() => api.impact(), 5000);
 
   const tiles = [
-    { label: '누적 기부', value: `${impact?.totalDonations ?? 0}건`, bg: C.yellow, fg: C.navy },
-    { label: '감축량', value: `${impact?.totalWeightKg ?? 0}kg`, bg: C.yellowSoft, fg: C.text },
+    { label: '누적 기부', value: `${impact?.totalDonations ?? 0}건`, bg: C.brand, fg: '#FFFFFF' },
+    { label: '감축량', value: `${impact?.totalWeightKg ?? 0}kg`, bg: C.brandSoft, fg: C.text },
     { label: 'CO₂e', value: `${impact?.totalCo2eKg ?? 0}kg`, bg: C.greenSoft, fg: C.text },
     {
       label: '참여 기관',
@@ -32,15 +33,21 @@ export default function Dashboard() {
         <View style={{ paddingBottom: 4 }}>
           <HomeHeader subtitle="IMPACT DASHBOARD" light />
         </View>
-        <Text style={s.headline}>우리가 함께 만든 변화</Text>
+        <Animated.Text entering={FadeInDown.duration(500)} style={s.headline}>
+          우리가 함께 만든 변화
+        </Animated.Text>
         <Text style={s.sub}>COMPLETED 기부 데이터를 기준으로 집계합니다.</Text>
 
         <View style={s.grid}>
-          {tiles.map((tile) => (
-            <View key={tile.label} style={[s.tile, { backgroundColor: tile.bg }]}>
+          {tiles.map((tile, index) => (
+            <Animated.View
+              key={tile.label}
+              entering={FadeInUp.delay(100 + index * 80).duration(450)}
+              style={[s.tile, { backgroundColor: tile.bg }]}
+            >
               <Text style={[s.tileLabel, { color: tile.fg }]}>{tile.label}</Text>
               <Text style={[s.tileValue, { color: tile.fg }]}>{tile.value}</Text>
-            </View>
+            </Animated.View>
           ))}
         </View>
 
@@ -79,7 +86,7 @@ const s = StyleSheet.create({
     paddingTop: 8,
   },
   barWrap: { alignItems: 'center', gap: 6, flex: 1 },
-  bar: { width: 18, borderRadius: 9, backgroundColor: C.yellow },
+  bar: { width: 18, borderRadius: 9, backgroundColor: C.brand },
   barValue: { fontSize: 11, fontFamily: 'Pretendard-ExtraBold', color: C.text },
   barLabel: { fontSize: 10, fontFamily: 'Pretendard-Regular', color: C.sub },
 });

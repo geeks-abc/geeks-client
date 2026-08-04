@@ -22,7 +22,7 @@ export default function CertificateScreen() {
   }, [donationId]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.yellow }} edges={['top', 'bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: C.brand }} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={{ padding: 24, gap: 20 }}>
         <Text style={s.logo}>이음 · CERTIFICATE</Text>
         <Text style={s.title}>기부가 완료됐어요!</Text>
@@ -56,7 +56,7 @@ export default function CertificateScreen() {
 const s = StyleSheet.create({
   logo: { fontSize: 13, fontFamily: 'Pretendard-Black', color: C.navy, letterSpacing: 1 },
   title: { fontSize: 28, fontFamily: 'Pretendard-Black', color: C.navy },
-  sub: { fontSize: 14, color: '#6B6300', fontFamily: 'Pretendard-SemiBold', marginTop: -10 },
+  sub: { fontSize: 14, color: C.brandDeep, fontFamily: 'Pretendard-SemiBold', marginTop: -10 },
   paper: { backgroundColor: '#FFF', borderRadius: R.card, padding: 24, gap: 2 },
   paperTitle: { fontSize: 20, fontFamily: 'Pretendard-Black', color: C.text, textAlign: 'center' },
   serial: { fontSize: 11, fontFamily: 'Pretendard-Regular', color: C.sub, textAlign: 'center', marginTop: 6 },

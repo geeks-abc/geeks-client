@@ -106,5 +106,5 @@ const s = StyleSheet.create({
   },
   chipSelected: { backgroundColor: C.navy, borderColor: C.navy },
   chipText: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: C.text },
-  chipTextSelected: { color: C.yellow },
+  chipTextSelected: { color: C.brand },
 });

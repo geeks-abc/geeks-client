@@ -31,7 +31,7 @@ export function Button({
   style?: ViewStyle;
 }) {
   const bg =
-    variant === 'primary' ? C.yellow : variant === 'dark' ? C.navy : variant === 'danger' ? C.redSoft : C.graySoft;
+    variant === 'primary' ? C.brand : variant === 'dark' ? C.navy : variant === 'danger' ? C.redSoft : C.graySoft;
   const fg = variant === 'dark' ? '#FFF' : variant === 'danger' ? C.red : C.text;
   return (
     <Pressable
@@ -39,7 +39,11 @@ export function Button({
       disabled={disabled || loading}
       style={({ pressed }) => [
         s.button,
-        { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1 },
+        {
+          backgroundColor: bg,
+          opacity: disabled ? 0.4 : pressed ? 0.9 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
         style,
       ]}
     >
@@ -150,7 +154,7 @@ const s = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: C.yellowSoft,
+    backgroundColor: C.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -27,7 +27,7 @@ export function HomeHeader({ subtitle, light }: { subtitle: string; light?: bool
   return (
     <View style={s.wrap}>
       <View>
-        <Text style={[s.logo, light && { color: C.yellow }]}>이음</Text>
+        <Text style={[s.logo, light && { color: C.brand }]}>이음</Text>
         <Text style={[s.subtitle, light && { color: '#8D97AC' }]}>{subtitle}</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 8 }}>
