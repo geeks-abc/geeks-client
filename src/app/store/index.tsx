@@ -46,11 +46,15 @@ export default function StoreHome() {
   };
 
   const visibleListings = (listings ?? []).filter((item) => item.status !== 'CANCELLED');
-  const today = visibleListings.filter((item) => isToday(item.createdAt));
+  // 모집 중·픽업 예정은 등록일과 무관하게 "지금 진행 중"인 수, 전달 완료만 오늘 기준
   const stats = [
-    { label: '모집 중', value: today.filter((i) => i.status === 'OPEN').length },
-    { label: '픽업 예정', value: today.filter((i) => i.status === 'MATCHED').length },
-    { label: '전달 완료', value: today.filter((i) => i.status === 'COMPLETED').length },
+    { label: '모집 중', value: visibleListings.filter((i) => i.status === 'OPEN').length },
+    { label: '픽업 예정', value: visibleListings.filter((i) => i.status === 'MATCHED').length },
+    {
+      label: '전달 완료',
+      value: visibleListings.filter((i) => i.status === 'COMPLETED' && isToday(i.pickupEnd))
+        .length,
+    },
   ];
 
   return (
