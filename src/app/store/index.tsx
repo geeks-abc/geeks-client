@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -12,10 +14,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { HomeHeader } from '@/components/header';
-import { Badge, Button, Card, EmptyState, SectionTitle } from '@/components/ui';
+import { Badge, Card, EmptyState } from '@/components/ui';
 import { api, Listing } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { fmtTime, isToday, usePolling } from '@/lib/hooks';
+import { fmtTime, isToday, remainingLabel, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
 
 // S-01 가게 홈
@@ -50,13 +52,21 @@ export default function StoreHome() {
     (l) => l.status !== 'OPEN' && l.status !== 'MATCHED',
   );
 
-  const renderCard = (listing: Listing) => (
+  const cardMeta = (listing: Listing) => {
+    if (listing.status === 'OPEN')
+      return `${listing.quantity}개 · ${remainingLabel(listing.pickupEnd)}`;
+    if (listing.status === 'MATCHED' && listing.match?.facility)
+      return `${listing.match.facility.name} · ${fmtTime(listing.pickupEnd)}까지 픽업`;
+    return `${listing.quantity}개 · ${fmtTime(listing.pickupEnd)} 마감`;
+  };
+
+  const renderCard = (listing: Listing, dimmed = false) => (
     <Animated.View key={listing.id} entering={FadeInUp.duration(400)}>
       <Pressable
         onPress={() => router.push(`/listing/${listing.id}`)}
         style={({ pressed }) => pressed && { opacity: 0.85 }}
       >
-        <Card style={s.listingCard}>
+        <Card style={[s.listingCard, dimmed && { opacity: 0.65 }]}>
           <View style={s.thumb}>
             {listing.photoUrl ? (
               <Image source={{ uri: listing.photoUrl }} style={s.thumbImg} />
@@ -64,14 +74,20 @@ export default function StoreHome() {
               <Text style={{ fontSize: 22 }}>🥐</Text>
             )}
           </View>
-          <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ flex: 1, gap: 5 }}>
             <Text style={s.listingName}>{listing.itemName}</Text>
-            <Text style={s.listingMeta}>
-              {listing.quantity}개 · {fmtTime(listing.pickupEnd)} 마감
+            <Text
+              style={[
+                s.listingMeta,
+                listing.status === 'MATCHED' && { color: C.blue },
+                listing.status === 'OPEN' && { color: C.brandDeep },
+              ]}
+            >
+              {cardMeta(listing)}
             </Text>
             <Badge status={listing.status} />
           </View>
-          <Text style={s.arrow}>→</Text>
+          <Ionicons name="chevron-forward" size={18} color={C.gray} />
         </Card>
       </Pressable>
     </Animated.View>
@@ -80,7 +96,7 @@ export default function StoreHome() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top']}>
       <ScrollView
-        contentContainerStyle={{ padding: 20, gap: 16 }}
+        contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <HomeHeader subtitle="STORE HOME" />
@@ -90,33 +106,70 @@ export default function StoreHome() {
           <Text style={s.headline}>남은 식품을{'\n'}오늘도 이어볼까요?</Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(120).duration(500)} style={s.statCard}>
-          {stats.map((stat) => (
-            <View key={stat.label} style={{ flex: 1, alignItems: 'center', gap: 4 }}>
-              <Text style={s.statLabel}>{stat.label}</Text>
-              <Text style={[s.statValue, stat.label === '매칭' && { color: C.brandOnDark }]}>
-                {stat.value}건
-              </Text>
+        <Animated.View entering={FadeInUp.delay(100).duration(500)}>
+          <LinearGradient
+            colors={['#2C5E3F', '#152C1E']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.statCard}
+          >
+            <Text style={s.statTitle}>오늘의 이음</Text>
+            <View style={{ flexDirection: 'row' }}>
+              {stats.map((stat, index) => (
+                <View
+                  key={stat.label}
+                  style={[s.statCol, index > 0 && s.statColDivider]}
+                >
+                  <Text style={s.statValue}>
+                    {stat.value}
+                    <Text style={s.statUnit}>건</Text>
+                  </Text>
+                  <Text style={s.statLabel}>{stat.label}</Text>
+                </View>
+              ))}
             </View>
-          ))}
+          </LinearGradient>
         </Animated.View>
 
-        <Button title="+ 기부 품목 등록" onPress={() => router.push('/new-listing')} />
+        <Animated.View entering={FadeInUp.delay(180).duration(500)}>
+          <Pressable
+            onPress={() => router.push('/new-listing')}
+            style={({ pressed }) => [s.cta, pressed && { transform: [{ scale: 0.98 }] }]}
+          >
+            <View style={s.ctaIcon}>
+              <Ionicons name="add" size={24} color={C.brandDeep} />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={s.ctaTitle}>기부 품목 등록</Text>
+              <Text style={s.ctaSub}>마감 전 남은 식품, 30초면 등록 끝</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.7)" />
+          </Pressable>
+        </Animated.View>
 
-        <SectionTitle>진행중인 품목</SectionTitle>
+        <View style={s.sectionHeader}>
+          <Text style={s.sectionTitle}>진행중인 품목</Text>
+          {active.length > 0 ? (
+            <View style={s.countChip}>
+              <Text style={s.countChipText}>{active.length}</Text>
+            </View>
+          ) : null}
+        </View>
         {listings === null ? null : active.length === 0 ? (
           <EmptyState
             title="진행중인 품목이 없어요"
             sub="30초면 오늘 남은 식품을 등록할 수 있어요."
           />
         ) : (
-          active.map(renderCard)
+          active.map((l) => renderCard(l))
         )}
 
         {past.length > 0 ? (
           <>
-            <SectionTitle>지난 품목</SectionTitle>
-            {past.map(renderCard)}
+            <View style={[s.sectionHeader, { marginTop: 8 }]}>
+              <Text style={s.sectionTitle}>지난 품목</Text>
+            </View>
+            {past.map((l) => renderCard(l, true))}
           </>
         ) : null}
       </ScrollView>
@@ -132,15 +185,51 @@ const s = StyleSheet.create({
     color: C.text,
     lineHeight: 36,
   },
-  statCard: {
-    flexDirection: 'row',
-    backgroundColor: C.navy,
-    borderRadius: 20,
-    paddingVertical: 22,
-    paddingHorizontal: 8,
+  statCard: { borderRadius: R.card, padding: 20, gap: 16 },
+  statTitle: {
+    fontSize: 12,
+    fontFamily: 'Pretendard-ExtraBold',
+    color: 'rgba(255,255,255,0.55)',
+    letterSpacing: 0.5,
   },
-  statLabel: { color: '#8D97AC', fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
-  statValue: { color: '#FFF', fontSize: 22, fontFamily: 'Pretendard-Black' },
+  statCol: { flex: 1, alignItems: 'center', gap: 3 },
+  statColDivider: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: 'rgba(255,255,255,0.2)',
+  },
+  statValue: { color: '#FFF', fontSize: 24, fontFamily: 'Pretendard-Black' },
+  statUnit: { fontSize: 14, fontFamily: 'Pretendard-Bold', color: 'rgba(255,255,255,0.6)' },
+  statLabel: { color: 'rgba(255,255,255,0.65)', fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
+  cta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: C.brand,
+    borderRadius: R.card,
+    padding: 18,
+  },
+  ctaIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaTitle: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: '#FFF' },
+  ctaSub: { fontSize: 12.5, fontFamily: 'Pretendard-Regular', color: 'rgba(255,255,255,0.75)' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
+  countChip: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: C.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 7,
+  },
+  countChipText: { fontSize: 12, fontFamily: 'Pretendard-ExtraBold', color: C.brandDeep },
   listingCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   thumb: {
     width: 52,
@@ -153,6 +242,5 @@ const s = StyleSheet.create({
   },
   thumbImg: { width: '100%', height: '100%' },
   listingName: { fontSize: 16, fontFamily: 'Pretendard-ExtraBold', color: C.text },
-  listingMeta: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub, marginBottom: 4 },
-  arrow: { fontSize: 18, color: C.gray, fontFamily: 'Pretendard-Bold' },
+  listingMeta: { fontSize: 13, fontFamily: 'Pretendard-SemiBold', color: C.sub },
 });
