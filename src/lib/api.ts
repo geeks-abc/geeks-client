@@ -165,6 +165,8 @@ export const api = {
     role: 'STORE' | 'FACILITY';
     address?: string;
     addressDetail?: string;
+    lat?: number;
+    lng?: number;
     contactPhone?: string;
     photoUrl?: string; // 가게 대표 사진
     facilityType?: string; // 기관 유형
