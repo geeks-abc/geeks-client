@@ -137,7 +137,13 @@ export interface Notice {
 export const api = {
   me: () => request<Me>('/auth/me'),
   // 마이페이지 정보 수정 — name/address/phone은 연결된 가게/시설 프로필에 반영 (이름은 닉네임과 동기화)
-  updateProfile: (body: { name?: string; address?: string; phone?: string }) =>
+  updateProfile: (body: {
+    name?: string;
+    address?: string;
+    phone?: string;
+    lat?: number;
+    lng?: number;
+  }) =>
     request<Me>('/auth/mypage/profile', { method: 'PATCH', body }),
 
   // 전화번호 온보딩 (랜딩 → 번호 → 인증코드 → [신규] 닉네임·유형)

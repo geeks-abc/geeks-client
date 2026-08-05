@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   RefreshControl,
@@ -18,6 +18,7 @@ import { FeedCardSkeleton } from '@/components/skeleton';
 import { api, FeedItem } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { usePolling } from '@/lib/hooks';
+import { loadProfileLocation, ProfileLocation } from '@/lib/profile-location';
 import { C, R } from '@/lib/theme';
 
 function remainingText(minutes: number) {
@@ -34,6 +35,33 @@ export default function FacilityFeed() {
   const facilityId = me?.facilityId;
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [savedLocation, setSavedLocation] = useState<ProfileLocation | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const facility = me?.facility;
+    if (!facility) {
+      setSavedLocation(null);
+      return;
+    }
+
+    void loadProfileLocation(facility.id).then((saved) => {
+      if (!active) return;
+      setSavedLocation(saved?.address === facility.address ? saved : null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [me?.facility]);
+
+  const mapLocation = savedLocation ?? (me?.facility
+    ? {
+        address: me.facility.address,
+        lat: me.facility.lat,
+        lng: me.facility.lng,
+        source: 'search' as const,
+      }
+    : null);
 
   const { data: feed, refresh } = usePolling(
     () => (facilityId ? api.feed(facilityId) : Promise.resolve([] as FeedItem[])),
@@ -89,9 +117,9 @@ export default function FacilityFeed() {
         <View style={s.locationCard}>
           <Ionicons name="location" size={18} color={C.brand} />
           <View style={{ flex: 1, gap: 1 }}>
-            <Text style={s.locationLabel}>현재 위치</Text>
+            <Text style={s.locationLabel}>설정 위치</Text>
             <Text numberOfLines={1} style={s.locationValue}>
-              {me?.facility?.address ?? '위치를 설정해주세요'}
+              {mapLocation?.address ?? '위치를 설정해주세요'}
             </Text>
           </View>
           <Text style={s.locationRadius}>반경 3km</Text>
@@ -122,7 +150,7 @@ export default function FacilityFeed() {
           지금 받을 수 있는 나눌{feed && feed.length > 0 ? ` ${feed.length}` : ''}
         </Text>
 
-        {viewMode === 'map' && me?.facility ? (
+        {viewMode === 'map' && me?.facility && mapLocation ? (
           feed === null ? (
             <View style={s.mapSkeleton}>
               <FeedCardSkeleton />
@@ -133,8 +161,8 @@ export default function FacilityFeed() {
                 <NearbyMap
                   facility={{
                     name: me.facility.name,
-                    lat: me.facility.lat,
-                    lng: me.facility.lng,
+                    lat: mapLocation.lat,
+                    lng: mapLocation.lng,
                   }}
                   items={mapItems}
                   onSelect={(listingId) => router.push(`/listing/${listingId}`)}
