@@ -67,7 +67,7 @@ export function createNearbyMapHtml(facility: NearbyMapFacility) {
 
     const facilityIcon = L.divIcon({
       className: '',
-      html: '<div class="facility-label">현재 시설</div>',
+      html: '<div class="facility-label">설정 위치</div>',
       iconSize: [72, 30],
       iconAnchor: [36, 15],
     });
