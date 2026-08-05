@@ -1,6 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { C } from '@/lib/theme';
 
@@ -21,8 +28,17 @@ export function PostcodeModal({
   onSelect: (result: PostcodeResult) => void;
   onClose: () => void;
 }) {
+  // 시트가 애니메이션 래퍼 안에 있어 % 높이가 무시되므로 픽셀 높이로 고정
+  const { height: windowHeight } = useWindowDimensions();
+  const sheetHeight = Math.round(windowHeight * 0.78);
+
   return (
-    <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet} showHandle={false}>
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      sheetStyle={{ ...s.sheet, height: sheetHeight }}
+      showHandle={false}
+    >
       <View style={s.header}>
         <Text style={s.title}>주소 검색</Text>
         <Pressable onPress={onClose} hitSlop={10}>
@@ -99,8 +115,12 @@ function NativePostcode({ onSelect }: { onSelect: (r: PostcodeResult) => void })
 
   return (
     <WebView
-      source={{ html }}
+      // https 오리진을 줘야 iOS WKWebView에서 주소 선택(oncomplete)이 안 죽는 경우가 있음
+      source={{ html, baseUrl: 'https://postcode.map.daum.net' }}
       style={{ flex: 1 }}
+      originWhitelist={['*']}
+      javaScriptEnabled
+      domStorageEnabled
       onMessage={(event: { nativeEvent: { data: string } }) => {
         try {
           onSelect(JSON.parse(event.nativeEvent.data) as PostcodeResult);
@@ -114,11 +134,13 @@ function NativePostcode({ onSelect }: { onSelect: (r: PostcodeResult) => void })
 
 const s = StyleSheet.create({
   sheet: {
-    height: '78%',
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
+    padding: 0,
+    gap: 0,
+    paddingBottom: 0,
   },
   header: {
     flexDirection: 'row',
