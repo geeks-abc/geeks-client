@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/lib/api';
 import { useAuth, useSwitchAccount } from '@/lib/auth';
 import { usePolling } from '@/lib/hooks';
@@ -31,7 +31,17 @@ export function HomeHeader({ light }: { subtitle?: string; light?: boolean }) {
 
   return (
     <View style={s.wrap}>
-      <Text style={[s.logo, { color: fg }]}>이음</Text>
+      {light ? (
+        // 어두운 배경에서는 로고 색이 묻혀서 화이트 워드마크 유지
+        <Text style={[s.logoText, { color: fg }]}>이음</Text>
+      ) : (
+        <Image
+          source={require('@/assets/images/logo-transparent.png')}
+          style={s.logoImage}
+          resizeMode="contain"
+          accessibilityLabel="이음"
+        />
+      )}
       <View style={{ flexDirection: 'row', gap: 4 }}>
         {recipient ? (
           <Pressable
@@ -66,7 +76,9 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 8,
   },
-  logo: { fontSize: 20, fontFamily: 'Pretendard-Black' },
+  logoText: { fontSize: 20, fontFamily: 'Pretendard-Black' },
+  // 원본 비율 1672:941 유지, 워드마크 높이에 맞춤
+  logoImage: { width: 57, height: 32, marginLeft: -6 },
   iconButton: { padding: 6 },
   dot: {
     position: 'absolute',
