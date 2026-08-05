@@ -1,13 +1,15 @@
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp, ZoomIn } from 'react-native-reanimated';
 import QRCode from 'react-native-qrcode-svg';
 import { BackButton } from '@/components/back-button';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
+import { notify } from '@/lib/feedback';
 import { fmtTime, remainingLabel, usePolling } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
 
@@ -17,9 +19,24 @@ export default function PickupDetail() {
   const router = useRouter();
   const matchId = Number(id);
   const [qrOpen, setQrOpen] = useState(false);
-  const { data: match } = usePolling(() => api.match(matchId), 5000);
+  // QR을 보여주는 동안은 가게의 완료 처리를 빨리 감지하도록 폴링 간격을 좁힘
+  const { data: match } = usePolling(() => api.match(matchId), qrOpen ? 2000 : 5000, [
+    matchId,
+    qrOpen,
+  ]);
   const store = match?.listing?.store;
   const directCode = match?.qrToken.replace(/\D/g, '').padEnd(6, '0').slice(0, 6) ?? '';
+  const completed = match?.listing?.status === 'COMPLETED';
+
+  // 가게가 전달 완료 처리하면 시설 쪽에도 성공 알림 — 화면에서 진행 중 → 완료 전환을 목격했을 때만 1회
+  const prevStatus = useRef<string | null>(null);
+  const status = match?.listing?.status ?? null;
+  useEffect(() => {
+    if (status === 'COMPLETED' && prevStatus.current && prevStatus.current !== 'COMPLETED') {
+      notify.success('전달이 완료됐어요', '따뜻한 나눔에 함께해주셔서 감사해요.');
+    }
+    if (status) prevStatus.current = status;
+  }, [status]);
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
@@ -59,8 +76,10 @@ export default function PickupDetail() {
           <View style={s.titleSection}>
             <View style={s.titleTopRow}>
               <Text style={s.category}>식품 나눔</Text>
-              <View style={s.statusChip}>
-                <Text style={s.statusText}>픽업 예정</Text>
+              <View style={[s.statusChip, completed && s.statusChipDone]}>
+                <Text style={[s.statusText, completed && s.statusTextDone]}>
+                  {completed ? '전달 완료' : '픽업 예정'}
+                </Text>
               </View>
             </View>
             <Text style={s.title}>{match?.listing?.itemName ?? '기부 식품'}</Text>
@@ -97,15 +116,26 @@ export default function PickupDetail() {
         </ScrollView>
 
         <View style={s.actionBar}>
-          <Button title="시설 QR 보여주기" onPress={() => setQrOpen(true)} style={s.qrButton} />
-          <Pressable
-            accessibilityLabel="가게에 전화하기"
-            disabled={!store?.phone}
-            onPress={() => store?.phone && Linking.openURL(`tel:${store.phone}`)}
-            style={({ pressed }) => [s.callButton, !store?.phone && s.disabledButton, pressed && { opacity: 0.7 }]}
-          >
-            <Ionicons name="call" size={23} color="#FFFFFF" />
-          </Pressable>
+          {completed ? (
+            <Button
+              title="전달 완료 · 내역 보기"
+              variant="dark"
+              onPress={() => router.replace('/facility/history')}
+              style={{ flex: 1 }}
+            />
+          ) : (
+            <>
+              <Button title="시설 QR 보여주기" onPress={() => setQrOpen(true)} style={s.qrButton} />
+              <Pressable
+                accessibilityLabel="가게에 전화하기"
+                disabled={!store?.phone}
+                onPress={() => store?.phone && Linking.openURL(`tel:${store.phone}`)}
+                style={({ pressed }) => [s.callButton, !store?.phone && s.disabledButton, pressed && { opacity: 0.7 }]}
+              >
+                <Ionicons name="call" size={23} color="#FFFFFF" />
+              </Pressable>
+            </>
+          )}
         </View>
       </View>
 
@@ -125,40 +155,76 @@ export default function PickupDetail() {
           </View>
 
           <ScrollView contentContainerStyle={s.qrContent} showsVerticalScrollIndicator={false}>
-            <View style={s.qrIntro}>
-              <Text style={s.qrTitle}>가게 담당자에게 QR을 보여주세요</Text>
-              <Text style={s.qrSub}>스캔이 완료되면 전달 확인 화면으로 이동해요.</Text>
-            </View>
-
-            {match ? (
-              <View style={s.qrCard}>
-                <View style={s.qrSafeZone}>
-                  <QRCode
-                    value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })}
-                    size={196}
-                    color={C.navy}
-                    backgroundColor="#FFFFFF"
-                  />
-                </View>
-                <View style={s.qrItemInfo}>
-                  <Text style={s.qrItemLabel}>픽업 상품</Text>
-                  <Text numberOfLines={1} style={s.qrItemName}>{match.listing?.itemName ?? '기부 식품'}</Text>
-                </View>
-                <View style={s.codeSection}>
-                  <Text style={s.qrHint}>QR 인식이 어려우면 이 코드를 알려주세요</Text>
-                  <Text style={s.directCode}>{directCode}</Text>
-                </View>
+            {completed ? (
+              // 가게가 완료 처리하면 폴링으로 감지해 성공 화면으로 전환
+              <View style={s.successWrap}>
+                <Animated.View entering={ZoomIn.duration(420)} style={s.successIcon}>
+                  <Ionicons name="checkmark" size={46} color="#FFFFFF" />
+                </Animated.View>
+                <Animated.Text entering={FadeInUp.delay(120).duration(400)} style={s.successTitle}>
+                  전달이 완료됐어요!
+                </Animated.Text>
+                <Animated.Text entering={FadeInUp.delay(220).duration(400)} style={s.successSub}>
+                  {match?.listing?.itemName ?? '기부 식품'}
+                  {match?.listing ? ` ${match.listing.quantity}개` : ''}를 잘 받았어요.{'\n'}
+                  따뜻한 나눔에 함께해주셔서 감사해요.
+                </Animated.Text>
+                <Animated.View
+                  entering={FadeInUp.delay(320).duration(400)}
+                  style={s.successCard}
+                >
+                  <Ionicons name="storefront" size={18} color={C.brand} />
+                  <Text style={s.successStore}>{store?.name ?? '나눔 가게'}</Text>
+                </Animated.View>
               </View>
-            ) : null}
+            ) : (
+              <>
+                <View style={s.qrIntro}>
+                  <Text style={s.qrTitle}>가게 담당자에게 QR을 보여주세요</Text>
+                  <Text style={s.qrSub}>스캔이 완료되면 이 화면에 완료 표시가 떠요.</Text>
+                </View>
 
-            <View style={s.qrNotice}>
-              <Ionicons name="information-circle-outline" size={18} color={C.sub} />
-              <Text style={s.qrNoticeText}>전달 완료 전까지 이 화면을 닫지 마세요.</Text>
-            </View>
+                {match ? (
+                  <View style={s.qrCard}>
+                    <View style={s.qrSafeZone}>
+                      <QRCode
+                        value={JSON.stringify({ matchId: match.id, qrToken: match.qrToken })}
+                        size={196}
+                        color={C.navy}
+                        backgroundColor="#FFFFFF"
+                      />
+                    </View>
+                    <View style={s.qrItemInfo}>
+                      <Text style={s.qrItemLabel}>픽업 상품</Text>
+                      <Text numberOfLines={1} style={s.qrItemName}>{match.listing?.itemName ?? '기부 식품'}</Text>
+                    </View>
+                    <View style={s.codeSection}>
+                      <Text style={s.qrHint}>QR 인식이 어려우면 이 코드를 알려주세요</Text>
+                      <Text style={s.directCode}>{directCode}</Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={s.qrNotice}>
+                  <Ionicons name="information-circle-outline" size={18} color={C.sub} />
+                  <Text style={s.qrNoticeText}>전달 완료 전까지 이 화면을 닫지 마세요.</Text>
+                </View>
+              </>
+            )}
           </ScrollView>
 
           <View style={s.qrActionBar}>
-            <Button title="닫기" variant="ghost" onPress={() => setQrOpen(false)} />
+            {completed ? (
+              <Button
+                title="내역 보기"
+                onPress={() => {
+                  setQrOpen(false);
+                  router.replace('/facility/history');
+                }}
+              />
+            ) : (
+              <Button title="닫기" variant="ghost" onPress={() => setQrOpen(false)} />
+            )}
           </View>
         </SafeAreaView>
       </Modal>
@@ -197,6 +263,8 @@ const s = StyleSheet.create({
   category: { color: C.sub, fontSize: 14, fontFamily: 'Pretendard-SemiBold' },
   statusChip: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: '#FFF0DB' },
   statusText: { color: '#E86618', fontSize: 12, fontFamily: 'Pretendard-ExtraBold' },
+  statusChipDone: { backgroundColor: C.navy },
+  statusTextDone: { color: '#FFFFFF' },
   title: { color: C.text, fontSize: 26, fontFamily: 'Pretendard-Black', letterSpacing: -0.8 },
   meta: { color: C.sub, fontSize: 13, fontFamily: 'Pretendard-Regular' },
   pickupCard: { margin: 20, marginBottom: 8, borderRadius: 18, backgroundColor: '#FFF5EC', padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14 },
@@ -232,6 +300,36 @@ const s = StyleSheet.create({
   qrNotice: { borderRadius: 14, backgroundColor: C.graySoft, padding: 13, marginTop: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   qrNoticeText: { color: C.sub, fontSize: 11.5, fontFamily: 'Pretendard-Regular' },
   qrActionBar: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: C.line, backgroundColor: '#FFFFFF' },
+  successWrap: { alignItems: 'center', paddingTop: 64, paddingHorizontal: 16 },
+  successIcon: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: C.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 22,
+  },
+  successTitle: { color: C.text, fontSize: 24, fontFamily: 'Pretendard-ExtraBold' },
+  successSub: {
+    color: C.sub,
+    fontSize: 14,
+    lineHeight: 21,
+    fontFamily: 'Pretendard-Regular',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  successCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: C.brandSoft,
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 24,
+  },
+  successStore: { color: C.brandDeep, fontSize: 14, fontFamily: 'Pretendard-Bold' },
   actionBar: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderColor: C.line },
   qrButton: { flex: 1, backgroundColor: '#FF6F0F' },
   callButton: { width: 54, height: 54, borderRadius: R.button, backgroundColor: '#FF6F0F', alignItems: 'center', justifyContent: 'center' },
