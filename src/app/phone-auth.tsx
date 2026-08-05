@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
-import { PostcodeModal } from '@/components/postcode-search';
 import { Button } from '@/components/ui';
 import { VerificationCodeInput } from '@/components/verification-code-input';
 import { api } from '@/lib/api';
@@ -51,11 +50,9 @@ export default function PhoneAuth() {
   // info step
   const [nickname, setNickname] = useState('');
   const [address, setAddress] = useState('');
-  const [addressDetail, setAddressDetail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [facilityType, setFacilityType] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [postcodeOpen, setPostcodeOpen] = useState(false);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +134,6 @@ export default function PhoneAuth() {
         nickname: nickname.trim(),
         role,
         address: address || undefined,
-        addressDetail: addressDetail.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
         photoUrl,
         facilityType: role === 'FACILITY' ? (facilityType ?? undefined) : undefined,
@@ -351,22 +347,12 @@ export default function PhoneAuth() {
                 </View>
               ) : null}
 
-              <View style={{ gap: 8 }}>
-                <Text style={s.label}>주소</Text>
-                <Pressable onPress={() => setPostcodeOpen(true)} style={s.addressButton}>
-                  <Ionicons name="search" size={16} color={address ? C.text : C.gray} />
-                  <Text style={[s.addressButtonText, !address && { color: C.gray }]}>
-                    {address || '우편번호 검색'}
-                  </Text>
-                </Pressable>
-                {address ? (
-                  <Field
-                    value={addressDetail}
-                    onChangeText={setAddressDetail}
-                    placeholder="상세 주소 (예: 1층)"
-                  />
-                ) : null}
-              </View>
+              <Field
+                label="주소"
+                value={address}
+                onChangeText={setAddress}
+                placeholder="예: 서울 마포구 양화로 45 1층"
+              />
 
               <Field
                 label="연락처 (선택)"
@@ -404,14 +390,6 @@ export default function PhoneAuth() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <PostcodeModal
-        visible={postcodeOpen}
-        onClose={() => setPostcodeOpen(false)}
-        onSelect={(result) => {
-          setAddress(result.address);
-          setPostcodeOpen(false);
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -543,18 +521,6 @@ const s = StyleSheet.create({
   typeChipSelected: { backgroundColor: C.brand, borderColor: C.brand },
   typeChipText: { fontSize: 13, fontFamily: 'Pretendard-Bold', color: C.text },
   typeChipTextSelected: { color: '#FFFFFF' },
-  addressButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.line,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  addressButtonText: { fontSize: 15, fontFamily: 'Pretendard-Regular', color: C.text, flex: 1 },
   errorText: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold' },
   doneWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   doneCheck: {
