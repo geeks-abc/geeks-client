@@ -1,11 +1,19 @@
-import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { BottomSheet } from '@/components/bottom-sheet';
 import { SLOT_MINUTES, nextSlotAfter } from '@/components/time-picker';
-import { C } from '@/lib/theme';
+import { C, R } from '@/lib/theme';
 
-// 픽업 일시 선택기 — 날짜(오늘부터 최대 7일) + 5분 단위 시간
+// 픽업 일시 선택기 — 날짜/시/분 휠(위아래 스크롤) 방식, 오늘부터 최대 7일
 export const MAX_DAYS = 7;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,6 +40,94 @@ const hhmm = (d: Date) =>
 // 표시 라벨: "오늘 19:30", "내일 09:00", "8/9 (토) 10:00"
 export const dateTimeLabel = (d: Date) => `${dayLabel(d)} ${hhmm(d)}`;
 
+const ITEM_HEIGHT = 44;
+const VISIBLE_ROWS = 5;
+const WHEEL_PAD = (ITEM_HEIGHT * (VISIBLE_ROWS - 1)) / 2;
+
+interface WheelOption<T> {
+  value: T;
+  label: string;
+}
+
+// 단일 휠 컬럼 — 스냅 스크롤로 가운데 항목 선택 (탭 선택도 지원)
+function Wheel<T extends string | number>({
+  options,
+  value,
+  onChange,
+  flex = 1,
+}: {
+  options: WheelOption<T>[];
+  value: T;
+  onChange: (next: T) => void;
+  flex?: number;
+}) {
+  const scrollRef = useRef<ScrollView>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  );
+  const optionsKey = options.map((option) => String(option.value)).join(',');
+
+  // 옵션 목록이 바뀌거나(날짜 변경 등) 외부 값이 바뀌면 위치 동기화
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: selectedIndex * ITEM_HEIGHT, animated: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optionsKey, value]);
+
+  const settle = (offsetY: number) => {
+    const index = Math.min(options.length - 1, Math.max(0, Math.round(offsetY / ITEM_HEIGHT)));
+    const option = options[index];
+    // 웹은 CSS 스냅을 안 쓰므로 여기서 직접 스냅 (네이티브도 오차 보정)
+    if (Math.abs(offsetY - index * ITEM_HEIGHT) > 1) {
+      scrollRef.current?.scrollTo({ y: index * ITEM_HEIGHT, animated: true });
+    }
+    if (option && option.value !== value) onChange(option.value);
+  };
+
+  // 웹은 momentum 이벤트가 안 와서 onScroll 디바운스로 스크롤 종료를 감지
+  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = event.nativeEvent.contentOffset.y;
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => settle(y), 140);
+  };
+
+  const onMomentumEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settle(event.nativeEvent.contentOffset.y);
+  };
+
+  return (
+    <View style={[s.wheel, { flex }]}>
+      <ScrollView
+        ref={scrollRef}
+        showsVerticalScrollIndicator={false}
+        // 웹의 CSS scroll-snap은 패딩을 무시하고 첫 항목을 상단에 붙여버려서 네이티브에서만 사용
+        snapToInterval={Platform.OS === 'web' ? undefined : ITEM_HEIGHT}
+        decelerationRate="fast"
+        scrollEventThrottle={16}
+        onScroll={onScroll}
+        onMomentumScrollEnd={onMomentumEnd}
+        contentContainerStyle={{ paddingVertical: WHEEL_PAD }}
+        nestedScrollEnabled
+      >
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <Pressable
+              key={String(option.value)}
+              onPress={() => onChange(option.value)}
+              style={s.wheelItem}
+            >
+              <Text style={[s.wheelText, active && s.wheelTextActive]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 export function DateTimePickerModal({
   visible,
   title,
@@ -53,145 +149,119 @@ export function DateTimePickerModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [minDate, visible],
   );
+  // 첫 선택 가능 슬롯 (하한 직후 5분 단위)
+  const firstSlot = useMemo(() => nextSlotAfter(lowerBound), [lowerBound]);
 
-  // 날짜 후보: 오늘부터 7일, 하한 이전 날짜는 제외
-  const days = useMemo(() => {
-    const today = startOfDay(new Date());
-    const minDay = startOfDay(lowerBound).getTime();
-    return Array.from({ length: MAX_DAYS }, (_, i) => new Date(today.getTime() + i * DAY_MS))
-      .filter((d) => d.getTime() >= minDay);
-  }, [lowerBound]);
+  const [day, setDay] = useState<number>(startOfDay(firstSlot).getTime());
+  const [hour, setHour] = useState<number>(firstSlot.getHours());
+  const [minute, setMinute] = useState<number>(firstSlot.getMinutes());
 
-  const [day, setDay] = useState<Date>(days[0]);
-
+  // 열릴 때 기존 선택값(또는 첫 슬롯)으로 초기화
   useEffect(() => {
     if (!visible) return;
-    const base = selected ?? lowerBound;
-    const match = days.find((d) => d.getTime() === startOfDay(base).getTime());
-    setDay(match ?? days[0]);
-  }, [visible, selected, days, lowerBound]);
+    const base = selected && selected.getTime() >= firstSlot.getTime() ? selected : firstSlot;
+    setDay(startOfDay(base).getTime());
+    setHour(base.getHours());
+    setMinute(Math.floor(base.getMinutes() / SLOT_MINUTES) * SLOT_MINUTES);
+  }, [visible, selected, firstSlot]);
 
-  // 선택한 날짜의 5분 슬롯 (하한이 걸리는 날은 하한 다음 슬롯부터)
-  const slots = useMemo(() => {
-    const isBoundDay = startOfDay(day).getTime() === startOfDay(lowerBound).getTime();
-    const first = isBoundDay ? nextSlotAfter(lowerBound) : startOfDay(day);
-    const end = startOfDay(day).getTime() + DAY_MS;
-    const list: Date[] = [];
-    for (let t = first.getTime(); t < end; t += SLOT_MINUTES * 60000) {
-      list.push(new Date(t));
+  const dayOptions = useMemo(() => {
+    const today = startOfDay(new Date());
+    const minDay = startOfDay(firstSlot).getTime();
+    return Array.from({ length: MAX_DAYS }, (_, i) => new Date(today.getTime() + i * DAY_MS))
+      .filter((d) => d.getTime() >= minDay)
+      .map((d) => ({ value: d.getTime(), label: dayLabel(d) }));
+  }, [firstSlot]);
+
+  const isBoundDay = day === startOfDay(firstSlot).getTime();
+
+  const hourOptions = useMemo(() => {
+    const from = isBoundDay ? firstSlot.getHours() : 0;
+    return Array.from({ length: 24 - from }, (_, i) => {
+      const h = from + i;
+      return { value: h, label: `${h}시` };
+    });
+  }, [isBoundDay, firstSlot]);
+
+  const minuteOptions = useMemo(() => {
+    const from = isBoundDay && hour === firstSlot.getHours() ? firstSlot.getMinutes() : 0;
+    const list: WheelOption<number>[] = [];
+    for (let m = from; m < 60; m += SLOT_MINUTES) {
+      list.push({ value: m, label: `${String(m).padStart(2, '0')}분` });
     }
     return list;
-  }, [day, lowerBound]);
+  }, [isBoundDay, hour, firstSlot]);
+
+  // 날짜/시가 바뀌어 현재 선택이 범위 밖이면 첫 옵션으로 보정
+  useEffect(() => {
+    if (!hourOptions.some((option) => option.value === hour)) setHour(hourOptions[0].value);
+  }, [hourOptions, hour]);
+  useEffect(() => {
+    if (!minuteOptions.some((option) => option.value === minute)) {
+      setMinute(minuteOptions[0]?.value ?? 0);
+    }
+  }, [minuteOptions, minute]);
+
+  const confirm = () => {
+    const result = new Date(day);
+    result.setHours(hour, minute, 0, 0);
+    onSelect(result);
+    onClose();
+  };
 
   return (
     <BottomSheet visible={visible} onClose={onClose} sheetStyle={s.sheet}>
-      <View style={s.sheetHeader}>
-        <Text style={s.title}>{title}</Text>
-        <Pressable
-          accessibilityLabel="시간 선택창 닫기"
-          hitSlop={8}
-          onPress={onClose}
-          style={({ pressed }) => [s.closeButton, pressed && { opacity: 0.65 }]}
-        >
-          <Ionicons name="close" size={21} color={C.text} />
-        </Pressable>
+      <Text style={s.title}>{title}</Text>
+
+      <View style={s.wheelRow}>
+        {/* 가운데 선택 밴드 */}
+        <View pointerEvents="none" style={s.selectionBand} />
+        <Wheel flex={1.4} options={dayOptions} value={day} onChange={setDay} />
+        <Wheel options={hourOptions} value={hour} onChange={setHour} />
+        <Wheel options={minuteOptions} value={minute} onChange={setMinute} />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.dayRow}
+      <Pressable
+        onPress={confirm}
+        style={({ pressed }) => [s.confirm, pressed && { opacity: 0.8 }]}
       >
-        {days.map((d) => {
-          const active = d.getTime() === startOfDay(day).getTime();
-          return (
-            <Pressable
-              key={d.getTime()}
-              onPress={() => setDay(d)}
-              style={[s.dayChip, active && s.dayChipActive]}
-            >
-              <Text style={[s.dayChipText, active && s.dayChipTextActive]}>
-                {dayLabel(d)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      <ScrollView style={{ maxHeight: 300 }} contentContainerStyle={s.grid}>
-        {slots.map((slot) => {
-          const active = selected?.getTime() === slot.getTime();
-          return (
-            <Pressable
-              key={slot.getTime()}
-              onPress={() => {
-                onSelect(slot);
-                onClose();
-              }}
-              style={[s.chip, active && s.chipActive]}
-            >
-              <Text style={[s.chipText, active && s.chipTextActive]}>{hhmm(slot)}</Text>
-            </Pressable>
-          );
-        })}
-        {slots.length === 0 ? (
-          <Text style={s.emptyText}>선택 가능한 시간이 없어요. 다른 날짜를 선택해주세요.</Text>
-        ) : null}
-      </ScrollView>
+        <Text style={s.confirmText}>선택 완료</Text>
+      </Pressable>
     </BottomSheet>
   );
 }
 
 const s = StyleSheet.create({
-  sheet: {
-    backgroundColor: '#F9F9F5',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  sheetHeader: {
-    minHeight: 36,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
+  sheet: { backgroundColor: '#FFFFFF', gap: 14 },
   title: { fontSize: 18, fontFamily: 'Pretendard-ExtraBold', color: C.text },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.card,
+  wheelRow: {
+    flexDirection: 'row',
+    height: ITEM_HEIGHT * VISIBLE_ROWS,
+  },
+  selectionBand: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: WHEEL_PAD,
+    height: ITEM_HEIGHT,
+    borderRadius: 12,
+    backgroundColor: C.brandSoft,
+  },
+  wheel: { height: ITEM_HEIGHT * VISIBLE_ROWS },
+  wheelItem: {
+    height: ITEM_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: C.line,
   },
-  dayRow: { gap: 8, paddingBottom: 4 },
-  dayChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: C.line,
-  },
-  dayChipActive: { backgroundColor: C.navy, borderColor: C.navy },
-  dayChipText: { fontSize: 13.5, fontFamily: 'Pretendard-Bold', color: C.text },
-  dayChipTextActive: { color: '#FFFFFF' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingBottom: 8 },
-  chip: {
-    width: '22.7%',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: C.line,
+  wheelText: { fontSize: 16, fontFamily: 'Pretendard-Regular', color: C.gray },
+  wheelTextActive: { fontSize: 17, fontFamily: 'Pretendard-Bold', color: C.brandDeep },
+  confirm: {
+    height: 54,
+    borderRadius: R.button,
+    backgroundColor: C.brand,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
-  chipActive: { backgroundColor: C.brand, borderColor: C.brand },
-  chipText: { fontSize: 13.5, fontFamily: 'Pretendard-Bold', color: C.text },
-  chipTextActive: { color: '#FFFFFF' },
-  emptyText: { fontSize: 13, fontFamily: 'Pretendard-Regular', color: C.sub, padding: 8 },
+  confirmText: { color: '#FFFFFF', fontSize: 15.5, fontFamily: 'Pretendard-Bold' },
 });

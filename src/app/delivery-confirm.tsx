@@ -2,12 +2,18 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { fmtTime, usePolling } from '@/lib/hooks';
-import { C } from '@/lib/theme';
+import { C, R } from '@/lib/theme';
 import { useSafeBack } from '@/lib/navigation';
 import { notify } from '@/lib/feedback';
 
@@ -20,7 +26,10 @@ export default function DeliveryConfirm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: match } = usePolling(
-    () => (Number.isFinite(numericMatchId) && numericMatchId > 0 ? api.match(numericMatchId) : Promise.reject(new Error('매칭 정보를 찾을 수 없어요.'))),
+    () =>
+      Number.isFinite(numericMatchId) && numericMatchId > 0
+        ? api.match(numericMatchId)
+        : Promise.reject(new Error('매칭 정보를 찾을 수 없어요.')),
     5000,
     [numericMatchId],
   );
@@ -46,59 +55,114 @@ export default function DeliveryConfirm() {
   const reScan = () => {
     router.replace({
       pathname: '/scan',
-      params: Number.isFinite(numericMatchId) && numericMatchId > 0 ? { matchId: String(numericMatchId) } : {},
+      params:
+        Number.isFinite(numericMatchId) && numericMatchId > 0
+          ? { matchId: String(numericMatchId) }
+          : {},
     });
   };
 
   return (
     <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
       <View style={s.screen}>
+        <View style={s.navbar}>
+          <Pressable
+            accessibilityLabel="뒤로 가기"
+            hitSlop={10}
+            onPress={goBackSafe}
+            style={({ pressed }) => [s.navButton, pressed && s.pressed]}
+          >
+            <Ionicons name="chevron-back" size={26} color={C.text} />
+          </Pressable>
+          <Text style={s.navTitle}>전달 확인</Text>
+          <View style={s.navButton} />
+        </View>
+
         <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-          <View style={s.header}>
-            <View>
-              <Text style={s.logo}>이음</Text>
-              <Text style={s.screenLabel}>FINAL CHECK</Text>
+          <View style={s.hero}>
+            <View style={s.heroIcon}>
+              <Ionicons name="shield-checkmark" size={26} color={C.brand} />
             </View>
-            <Pressable onPress={goBackSafe} hitSlop={8}><Text style={s.closeText}>닫기</Text></Pressable>
+            <Text style={s.heroTitle}>전달 정보를 확인해주세요</Text>
+            <Text style={s.heroSub}>QR 확인이 끝났어요. 아래 내용이 맞는지 확인해주세요.</Text>
           </View>
 
-          <Text style={s.title}>전달 정보를 확인해 주세요.</Text>
-
-          <View style={s.facilityCard}>
-            <View style={s.facilityAvatar}><Ionicons name="heart" size={23} color={C.navy} /></View>
-            <Text style={s.facilityName}>{match?.facility?.name ?? '수령 시설'}</Text>
-            <Text style={s.facilityMeta}>{match?.facility?.type ?? '복지시설'}</Text>
-            <View style={s.confirmedChip}><Text style={s.confirmedChipText}>QR · 코드 확인 완료</Text></View>
-          </View>
-
-          <View style={s.section}>
-            <Text style={s.sectionTitle}>전달 품목</Text>
-            <View style={s.foodCard}>
-              {match?.listing?.photoUrl ? (
-                <Image transition={150} source={{ uri: match.listing.photoUrl }} style={s.foodImage} />
-              ) : (
-                <View style={s.foodImage}><View style={s.foodFooter}><Text style={s.foodFooterText}>FOOD</Text></View></View>
-              )}
-              <View style={s.foodInfo}>
-                <Text style={s.foodStore}>{match?.listing?.store?.name ?? '오늘의 나눔'}</Text>
-                <Text style={s.foodName}>{match?.listing?.itemName ?? '-'}</Text>
-                <Text style={s.foodMeta}>
-                  {match?.listing ? `${match.listing.quantity}개 · ${fmtTime(match.listing.pickupEnd)} 마감` : '-'}
-                </Text>
-                <View style={s.foodChip}><Text style={s.foodChipText}>픽업 예정</Text></View>
+          <Text style={s.sectionTitle}>받는 시설</Text>
+          <View style={s.card}>
+            <View style={s.facilityHead}>
+              <View style={s.facilityAvatar}>
+                <Ionicons name="home" size={20} color={C.blue} />
               </View>
-              <Ionicons name="arrow-forward" size={22} color={C.navy} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={s.facilityName}>{match?.facility?.name ?? '수령 시설'}</Text>
+                <Text style={s.facilityType}>{match?.facility?.type ?? '복지시설'}</Text>
+              </View>
+              <View style={s.verifiedChip}>
+                <Ionicons name="checkmark-circle" size={13} color={C.brandDeep} />
+                <Text style={s.verifiedChipText}>QR 확인 완료</Text>
+              </View>
             </View>
           </View>
 
-          {error ? <Text style={s.error}>{error}</Text> : null}
+          <Text style={s.sectionTitle}>전달 품목</Text>
+          <View style={[s.card, s.foodCard]}>
+            {match?.listing?.photoUrl ? (
+              <Image
+                transition={150}
+                source={{ uri: match.listing.photoUrl }}
+                style={s.foodImage}
+                contentFit="cover"
+              />
+            ) : (
+              <View style={[s.foodImage, s.foodImageFallback]}>
+                <Ionicons name="fast-food-outline" size={26} color={C.brand} />
+              </View>
+            )}
+            <View style={{ flex: 1, gap: 3 }}>
+              <Text style={s.foodStore}>{match?.listing?.store?.name ?? '오늘의 나눔'}</Text>
+              <Text style={s.foodName}>{match?.listing?.itemName ?? '-'}</Text>
+              <Text style={s.foodMeta}>
+                {match?.listing
+                  ? `${match.listing.quantity}개 · ${fmtTime(match.listing.pickupEnd)} 마감`
+                  : '-'}
+              </Text>
+            </View>
+          </View>
+
+          {error ? (
+            <View style={s.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color={C.red} />
+              <Text style={s.errorText}>{error}</Text>
+            </View>
+          ) : null}
         </ScrollView>
 
         <View style={s.actionBar}>
-          <Text style={s.warning}>아래 버튼을 누르면 되돌릴 수 없습니다.</Text>
+          <View style={s.warningRow}>
+            <Ionicons name="information-circle-outline" size={15} color={C.sub} />
+            <Text style={s.warning}>전달 완료 후에는 되돌릴 수 없어요.</Text>
+          </View>
           <View style={s.actions}>
-            <Button title="다시 확인" variant="ghost" onPress={reScan} style={s.retryButton} />
-            <Button title="전달 완료" variant="dark" loading={busy} onPress={completeDelivery} style={s.completeButton} />
+            <Pressable
+              onPress={reScan}
+              style={({ pressed }) => [s.secondaryButton, pressed && s.pressed]}
+            >
+              <Text style={s.secondaryButtonText}>다시 스캔</Text>
+            </Pressable>
+            <Pressable
+              disabled={busy}
+              onPress={completeDelivery}
+              style={({ pressed }) => [s.primaryButton, (pressed || busy) && s.pressed]}
+            >
+              {busy ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark" size={19} color="#FFFFFF" />
+                  <Text style={s.primaryButtonText}>전달 완료</Text>
+                </>
+              )}
+            </Pressable>
           </View>
         </View>
       </View>
@@ -107,36 +171,127 @@ export default function DeliveryConfirm() {
 }
 
 const s = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E9E9E6' },
-  screen: { flex: 1, backgroundColor: '#FBFBF9', borderTopLeftRadius: 28, borderTopRightRadius: 28, overflow: 'hidden' },
-  content: { padding: 20, gap: 28 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  logo: { color: C.navy, fontSize: 25, fontFamily: 'Pretendard-Black' },
-  screenLabel: { color: C.sub, fontSize: 10, fontFamily: 'Pretendard-ExtraBold', letterSpacing: 0.7 },
-  closeText: { color: C.navy, fontSize: 12, fontFamily: 'Pretendard-ExtraBold', paddingTop: 7 },
-  title: { color: C.navy, fontSize: 24, fontFamily: 'Pretendard-Black', letterSpacing: -0.8 },
-  facilityCard: { backgroundColor: '#FFD21D', borderRadius: 21, padding: 20, gap: 4 },
-  facilityAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF2A8', alignItems: 'center', justifyContent: 'center', marginBottom: 3 },
-  facilityName: { color: C.navy, fontSize: 18, fontFamily: 'Pretendard-ExtraBold' },
-  facilityMeta: { color: '#4D5158', fontSize: 11, fontFamily: 'Pretendard-Regular' },
-  confirmedChip: { alignSelf: 'flex-start', marginTop: 8, backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  confirmedChipText: { color: '#149050', fontSize: 10, fontFamily: 'Pretendard-ExtraBold' },
-  section: { gap: 12 },
-  sectionTitle: { color: C.navy, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
-  foodCard: { minHeight: 102, padding: 10, borderRadius: 22, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', gap: 12 },
-  foodImage: { width: 82, height: 82, borderRadius: 15, overflow: 'hidden', backgroundColor: '#1F9C59', justifyContent: 'flex-end' },
-  foodFooter: { height: 28, paddingHorizontal: 11, justifyContent: 'center', backgroundColor: C.navy },
-  foodFooterText: { color: '#FFFFFF', fontSize: 9, fontFamily: 'Pretendard-ExtraBold' },
-  foodInfo: { flex: 1, gap: 3 },
-  foodStore: { color: C.sub, fontSize: 10, fontFamily: 'Pretendard-Regular' },
-  foodName: { color: C.navy, fontSize: 14, fontFamily: 'Pretendard-ExtraBold' },
-  foodMeta: { color: C.sub, fontSize: 10, fontFamily: 'Pretendard-Regular' },
-  foodChip: { alignSelf: 'flex-start', backgroundColor: '#FFF1B5', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, marginTop: 2 },
-  foodChipText: { color: C.navy, fontSize: 9, fontFamily: 'Pretendard-ExtraBold' },
-  error: { color: C.red, fontSize: 13, fontFamily: 'Pretendard-SemiBold', textAlign: 'center' },
-  actionBar: { borderTopWidth: 1, borderColor: C.line, backgroundColor: '#FBFBF9', padding: 20, gap: 18 },
-  warning: { color: C.red, fontSize: 10.5, fontFamily: 'Pretendard-SemiBold' },
-  actions: { flexDirection: 'row', gap: 12 },
-  retryButton: { flex: 1 },
-  completeButton: { flex: 1.25 },
+  safeArea: { flex: 1, backgroundColor: C.bg },
+  screen: { flex: 1 },
+  navbar: {
+    height: 56,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  navTitle: { color: C.text, fontSize: 17, fontFamily: 'Pretendard-ExtraBold' },
+  content: { padding: 20, paddingTop: 8, paddingBottom: 24 },
+  hero: { alignItems: 'center', gap: 8, paddingVertical: 26 },
+  heroIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: C.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  heroTitle: { color: C.text, fontSize: 21, fontFamily: 'Pretendard-ExtraBold' },
+  heroSub: {
+    color: C.sub,
+    fontSize: 13,
+    lineHeight: 19,
+    fontFamily: 'Pretendard-Regular',
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    color: C.text,
+    fontSize: 15,
+    fontFamily: 'Pretendard-Bold',
+    marginBottom: 10,
+    marginTop: 6,
+  },
+  card: {
+    backgroundColor: C.card,
+    borderRadius: R.card,
+    paddingHorizontal: 18,
+    paddingVertical: 6,
+    marginBottom: 22,
+  },
+  facilityHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  facilityAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: C.blueSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  facilityName: { color: C.text, fontSize: 15.5, fontFamily: 'Pretendard-Bold' },
+  facilityType: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular' },
+  verifiedChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: C.brandSoft,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  verifiedChipText: { color: C.brandDeep, fontSize: 10.5, fontFamily: 'Pretendard-ExtraBold' },
+  foodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    paddingVertical: 14,
+  },
+  foodImage: { width: 64, height: 64, borderRadius: 14, backgroundColor: C.brandSoft },
+  foodImageFallback: { alignItems: 'center', justifyContent: 'center' },
+  foodStore: { color: C.sub, fontSize: 11, fontFamily: 'Pretendard-Regular' },
+  foodName: { color: C.text, fontSize: 15, fontFamily: 'Pretendard-Bold' },
+  foodMeta: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-Regular' },
+  errorBox: {
+    borderRadius: 12,
+    backgroundColor: C.redSoft,
+    padding: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  errorText: { flex: 1, color: C.red, fontSize: 12, lineHeight: 17, fontFamily: 'Pretendard-SemiBold' },
+  actionBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: C.line,
+    backgroundColor: C.card,
+    gap: 10,
+  },
+  warningRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  warning: { color: C.sub, fontSize: 12, fontFamily: 'Pretendard-SemiBold' },
+  actions: { flexDirection: 'row', gap: 10 },
+  secondaryButton: {
+    flex: 0.72,
+    height: 54,
+    borderRadius: R.button,
+    backgroundColor: C.graySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: { color: C.text, fontSize: 14.5, fontFamily: 'Pretendard-Bold' },
+  primaryButton: {
+    flex: 1,
+    height: 54,
+    borderRadius: R.button,
+    backgroundColor: C.brand,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  primaryButtonText: { color: '#FFFFFF', fontSize: 15.5, fontFamily: 'Pretendard-Bold' },
+  pressed: { opacity: 0.72 },
 });
