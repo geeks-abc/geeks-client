@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +7,8 @@ import { Skeleton } from '@/components/skeleton';
 import { Button } from '@/components/ui';
 import { api } from '@/lib/api';
 import { homePath, useAuth } from '@/lib/auth';
+import { openCertificatePdf } from '@/lib/certificate';
+import { notify } from '@/lib/feedback';
 import { fmtDateTime } from '@/lib/hooks';
 import { C, R } from '@/lib/theme';
 
@@ -21,6 +22,18 @@ export default function DonationComplete() {
   const donationId = Number(id);
   const [cert, setCert] = useState<Certificate | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await openCertificatePdf(donationId);
+    } catch (e) {
+      notify.error('확인서 열기 실패', e instanceof Error ? e.message : undefined);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   useEffect(() => {
     setLoadFailed(false);
@@ -106,7 +119,8 @@ export default function DonationComplete() {
         <Button
           title="기부 확인서 PDF 받기"
           disabled={!cert}
-          onPress={() => WebBrowser.openBrowserAsync(api.certificatePdfUrl(donationId))}
+          loading={pdfBusy}
+          onPress={downloadPdf}
         />
         <Pressable
           onPress={goHome}
