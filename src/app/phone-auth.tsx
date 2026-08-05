@@ -15,12 +15,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
+import { ProfileLocationPicker } from '@/components/profile-location-picker';
 import { Button } from '@/components/ui';
 import { VerificationCodeInput } from '@/components/verification-code-input';
 import { api } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { homePath, useAuth } from '@/lib/auth';
 import { useSafeBack } from '@/lib/navigation';
+import { ProfileLocation, saveProfileLocation } from '@/lib/profile-location';
 import { C } from '@/lib/theme';
 
 type Step = 'phone' | 'code' | 'role' | 'info' | 'done';
@@ -38,7 +40,7 @@ const formatPhone = (digits: string) => {
 export default function PhoneAuth() {
   const router = useRouter();
   const goBackSafe = useSafeBack();
-  const { adoptToken } = useAuth();
+  const { adoptToken, refresh } = useAuth();
 
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
@@ -49,7 +51,7 @@ export default function PhoneAuth() {
 
   // info step
   const [nickname, setNickname] = useState('');
-  const [address, setAddress] = useState('');
+  const [location, setLocation] = useState<ProfileLocation | null>(null);
   const [contactPhone, setContactPhone] = useState('');
   const [facilityType, setFacilityType] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -76,8 +78,24 @@ export default function PhoneAuth() {
     }
   };
 
-  const finish = async (accessToken: string, isNew: boolean, name?: string | null) => {
+  const finish = async (
+    accessToken: string,
+    isNew: boolean,
+    name?: string | null,
+    signupLocation?: ProfileLocation,
+  ) => {
     const profile = await adoptToken(accessToken);
+    if (isNew && signupLocation) {
+      await api.updateProfile({
+        address: signupLocation.address,
+        phone: contactPhone.trim() || undefined,
+        lat: signupLocation.lat,
+        lng: signupLocation.lng,
+      });
+      const profileId = profile.store?.id ?? profile.facility?.id;
+      if (profileId) await saveProfileLocation(profileId, signupLocation);
+      await refresh();
+    }
     setWelcome(
       isNew
         ? { title: `만나서 반가워요,\n${name ?? '이음'}님!`, sub: '이제 이음을 시작할 수 있어요.' }
@@ -121,6 +139,10 @@ export default function PhoneAuth() {
       setError(role === 'STORE' ? '상호명을 입력해주세요.' : '기관명을 입력해주세요.');
       return;
     }
+    if (!location) {
+      setError('현재 위치 또는 주소 검색으로 위치를 설정해주세요.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -133,12 +155,14 @@ export default function PhoneAuth() {
         signupToken,
         nickname: nickname.trim(),
         role,
-        address: address || undefined,
+        address: location.address,
+        lat: location.lat,
+        lng: location.lng,
         contactPhone: contactPhone.trim() || undefined,
         photoUrl,
         facilityType: role === 'FACILITY' ? (facilityType ?? undefined) : undefined,
       });
-      await finish(res.accessToken, true, nickname.trim());
+      await finish(res.accessToken, true, nickname.trim(), location);
     } catch (e) {
       fail(e);
     } finally {
@@ -347,11 +371,13 @@ export default function PhoneAuth() {
                 </View>
               ) : null}
 
-              <Field
-                label="주소"
-                value={address}
-                onChangeText={setAddress}
-                placeholder="예: 서울 마포구 양화로 45 1층"
+              <ProfileLocationPicker
+                value={location}
+                onChange={(selected) => {
+                  setLocation(selected);
+                  setError(null);
+                }}
+                disabled={busy}
               />
 
               <Field
